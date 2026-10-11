@@ -20,7 +20,7 @@ function encodeState(nonce, redirectUrl) {
 var DEFAULTS = {
   token: '',
   owner: '',
-  repo: 'leetcode-solutions',
+  repo: 'Leet-Work',
   branch: 'main',
   baseFolder: 'LeetCode',
   folderOrg: 'difficulty',
@@ -3062,23 +3062,41 @@ async function completeOAuth(token, extra) {
   if (extra.expiresAt) st.settings.tokenExpiresAt = extra.expiresAt;
 
   try {
-    const repoRes = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated', {
-      cache: 'no-store',
-      headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'User-Agent': 'LeetSync' }
-    });
-    if (repoRes.ok) {
-      const userRepos = await repoRes.json();
-      const matchingRepo = userRepos.find(r => {
-        const n = (r.name || '').toLowerCase();
-        return n === 'leetcode' || n === 'leetcode-solutions' || n === 'leet-work' || n === 'leethub';
+    // GitHub App: list installations then repositories
+    try {
+      const instRes = await fetch('https://api.github.com/user/installations', {
+        cache: 'no-store',
+        headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'User-Agent': 'LeetSync' }
       });
-      if (matchingRepo) {
-        st.settings.repo = matchingRepo.name;
-        st.settings.branch = matchingRepo.default_branch || 'main';
-      } else if (!st.settings.repo) {
-        st.settings.repo = 'leetcode-solutions';
+      if (instRes.ok) {
+        const inst = await instRes.json();
+        const installations = inst.installations || [];
+        for (let i = 0; i < installations.length && !st.settings.repo; i++) {
+          const iid = installations[i].id;
+          const repoRes = await fetch('https://api.github.com/user/installations/' + iid + '/repositories?per_page=100', {
+            cache: 'no-store',
+            headers: { 'Authorization': 'Bearer ' + token, 'Accept': 'application/vnd.github+json', 'User-Agent': 'LeetSync' }
+          });
+          if (repoRes.ok) {
+            const repos = await repoRes.json();
+            const list = repos.repositories || repos || [];
+            // prefer Leet-Work
+            let found = list.find(r => (r.name || '').toLowerCase() === 'leet-work');
+            if (!found) {
+              found = list.find(r => {
+                const n = (r.name || '').toLowerCase();
+                return n === 'leetcode' || n === 'leetcode-solutions' || n === 'leethub';
+              });
+            }
+            if (found) {
+              st.settings.repo = found.name;
+              st.settings.owner = found.owner ? (found.owner.login || st.settings.owner) : st.settings.owner;
+              st.settings.branch = found.default_branch || 'main';
+            }
+          }
+        }
       }
-    }
+    } catch (e) {}
   } catch (repoErr) {}
 
   await api.storage.local.set({ settings: st.settings, lastError: null, oauthState: '' });
@@ -3112,7 +3130,8 @@ if (api) {
       if (msg.type === 'createRepo') { try{ sendResponse(await createRepoOnGithub(msg.name||msg.repoName,msg.settings,msg.private)); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
       if (msg.type === 'checkRepo') { try{ sendResponse(await checkRepo(msg.settings)); }catch(e){ sendResponse({ok:false,error:e.status?authHint(e):e.message}); } return true; }
       if (msg.type === 'testConnection') { try{ sendResponse(await testConnection(msg.settings)); }catch(e){ sendResponse({ok:false,error:e.status?authHint(e):e.message}); } return true; }
-      if (msg.type === 'startGithubOAuth') { sendResponse(await (async function(){ const lock=await getOAuthLock(); if(lock&&Date.now()-lock<30000){ return {ok:false,error:"Login already in progress"}; } await api.storage.session.set({oauthLock:Date.now()}); try{ const nonce=crypto.randomUUID(); const redirectUrl=getOAuthRedirectUri(); const workerCallback=OAUTH_WORKER_URL+"/callback"; const state=encodeState(nonce,redirectUrl); await api.storage.local.set({oauthState:state}); await appendLog("INFO","OAuth: extension redirect target = "+redirectUrl); if(api.identity&&api.identity.launchWebAuthFlow){ try{ const authUrl="https://github.com/login/oauth/authorize?client_id="+GITHUB_CLIENT_ID+"&scope=repo&redirect_uri="+encodeURIComponent(workerCallback)+"&state="+encodeURIComponent(state); await appendLog("INFO","OAuth: launching GitHub authorization popup..."); const authResultUrl=await api.identity.launchWebAuthFlow({url:authUrl,interactive:true}); const paramStr=(authResultUrl.split("#")[1]||authResultUrl.split("?")[1])||""; const params=new URLSearchParams(paramStr); const code=params.get("code"); const returnedState=params.get("state"); const error=params.get("error"); const errorDesc=params.get("error_description"); if(error){ throw new Error("GitHub authorization failed: "+error+(errorDesc?" - "+decodeURIComponent(errorDesc):"")); } const storedState=(await api.storage.local.get({oauthState:""})).oauthState; if(!returnedState||returnedState!==storedState){ throw new Error("OAuth state mismatch (CSRF check failed)"); } try{ const returnedData=JSON.parse(atob(returnedState)); if(returnedData.n!==nonce){ throw new Error("Nonce mismatch"); } }catch(parseErr){ if(parseErr.message==="Nonce mismatch") throw parseErr; } if(!code){ throw new Error("No authorization code in OAuth response"); } await appendLog("INFO","OAuth: code received, exchanging via Worker /token..."); const tokenRes=await fetch(OAUTH_WORKER_URL+"/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:code,state:state,nonce:nonce})}); let tokenData=null; try{ tokenData=await tokenRes.json(); }catch(e){} if(!tokenRes.ok||!tokenData||!tokenData.access_token){ const why=(tokenData&&(tokenData.error_description||tokenData.error))||("HTTP "+tokenRes.status); throw new Error("Worker token exchange failed: "+(why||"unknown error")); } const extra={}; if(tokenData.refresh_token) extra.refreshToken=tokenData.refresh_token; if(tokenData.expires_in) extra.expiresAt=Date.now()+parseInt(tokenData.expires_in,10)*1000; return await completeOAuth(tokenData.access_token,extra); }catch(flowErr){ if(flowErr&&flowErr.message&&flowErr.message.indexOf("user cancel")!==-1){ await appendLog("INFO","OAuth cancelled by user."); await api.storage.session.remove("oauthLock"); return {ok:false,error:"cancelled",cancelled:true}; } throw flowErr; } } throw new Error("identity.launchWebAuthFlow is not available in this browser"); }catch(err){ await appendLog("ERROR","OAuth error: "+err.message); await api.storage.session.remove("oauthLock"); return {ok:false,error:err.message}; } })()); return true; }
+      if (msg.type === 'startGithubOAuth') { sendResponse(await (async function(){ const lock=await getOAuthLock(); if(lock&&Date.now()-lock<30000){ return {ok:false,error:"Login already in progress"}; } await api.storage.session.set({oauthLock:Date.now()}); try{ const nonce=crypto.randomUUID(); const redirectUrl=getOAuthRedirectUri(); const workerCallback=OAUTH_WORKER_URL+"/callback"; const state=encodeState(nonce,redirectUrl); await api.storage.local.set({oauthState:state}); await appendLog("INFO","OAuth: extension redirect target = "+redirectUrl); if(api.identity&&api.identity.launchWebAuthFlow){ try{ const authUrl="https://github.com/login/oauth/authorize?client_id="+GITHUB_CLIENT_ID+"&redirect_uri="+encodeURIComponent(workerCallback)+"&state="+encodeURIComponent(state); await appendLog("INFO","OAuth: launching GitHub authorization popup...");
+              await appendLog("DEBUG","OAuth authorize URL: "+authUrl.replace(/state=[^&]+/,"state=REDACTED")); const authResultUrl=await api.identity.launchWebAuthFlow({url:authUrl,interactive:true}); const paramStr=(authResultUrl.split("#")[1]||authResultUrl.split("?")[1])||""; const params=new URLSearchParams(paramStr); const code=params.get("code"); const returnedState=params.get("state"); const error=params.get("error"); const errorDesc=params.get("error_description"); if(error){ throw new Error("GitHub authorization failed: "+error+(errorDesc?" - "+decodeURIComponent(errorDesc):"")); } const storedState=(await api.storage.local.get({oauthState:""})).oauthState; if(!returnedState||returnedState!==storedState){ throw new Error("OAuth state mismatch (CSRF check failed)"); } try{ const returnedData=JSON.parse(atob(returnedState)); if(returnedData.n!==nonce){ throw new Error("Nonce mismatch"); } }catch(parseErr){ if(parseErr.message==="Nonce mismatch") throw parseErr; } if(!code){ throw new Error("No authorization code in OAuth response"); } await appendLog("INFO","OAuth: code received, exchanging via Worker /token..."); const tokenRes=await fetch(OAUTH_WORKER_URL+"/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:code,state:state,nonce:nonce})}); let tokenData=null; try{ tokenData=await tokenRes.json(); }catch(e){} if(!tokenRes.ok||!tokenData||!tokenData.access_token){ const why=(tokenData&&(tokenData.error_description||tokenData.error))||("HTTP "+tokenRes.status); throw new Error("Worker token exchange failed: "+(why||"unknown error")); } const extra={}; if(tokenData.refresh_token) extra.refreshToken=tokenData.refresh_token; if(tokenData.expires_in) extra.expiresAt=Date.now()+parseInt(tokenData.expires_in,10)*1000; return await completeOAuth(tokenData.access_token,extra); }catch(flowErr){ if(flowErr&&flowErr.message&&flowErr.message.indexOf("user cancel")!==-1){ await appendLog("INFO","OAuth cancelled by user."); await api.storage.session.remove("oauthLock"); return {ok:false,error:"cancelled",cancelled:true}; } throw flowErr; } } throw new Error("identity.launchWebAuthFlow is not available in this browser"); }catch(err){ await appendLog("ERROR","OAuth error: "+err.message); await api.storage.session.remove("oauthLock"); return {ok:false,error:err.message}; } })()); return true; }
       if (msg.type === 'disconnectGithub') { try{ var st=await getState(); st.settings.token=""; st.settings.owner=""; await api.storage.local.set({settings:st.settings,lastError:null}); await appendLog("INFO","Disconnected GitHub account."); sendResponse({ok:true}); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
       if (msg.type === 'openOptions') { if(api.runtime&&api.runtime.openOptionsPage){ try{ await api.runtime.openOptionsPage(); }catch(e){} sendResponse({ok:true}); return true; } if(api.tabs&&api.tabs.create){ api.tabs.create({url:api.runtime.getURL("options.html")}); sendResponse({ok:true}); return true; } sendResponse({ok:false}); return true; }
       sendResponse({ok:false,error:"unknown message type"}); return true;
