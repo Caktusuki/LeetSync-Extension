@@ -929,7 +929,7 @@ if (btnPopupOAuth) {
       } else if (res && res.cancelled) {
         // user closed the popup - not an error
       } else if (res && res.error) {
-        alert('GitHub login failed: ' + res.error);
+        console.error('GitHub login failed:', res.error);
       }
     });
   });
