@@ -2,14 +2,14 @@
 // Everything is stored locally (browser.storage.local). The only network calls
 // are to api.github.com with the token YOU provide.
 
-const browserAPI = (typeof browser !== 'undefined') ? browser : ((typeof chrome !== 'undefined') ? chrome : null);
+const api = globalThis.browser ?? globalThis.chrome ?? null;
 
 const GITHUB_CLIENT_ID = 'Iv23lis69kPQFd8PJfLf';
 const OAUTH_WORKER_URL = 'https://leetsync-oauth.cactusuki.workers.dev';
 
 function getOAuthRedirectUri() {
-  return browserAPI.identity && browserAPI.identity.getRedirectURL
-    ? browserAPI.identity.getRedirectURL()
+  return api.identity && api.identity.getRedirectURL
+    ? api.identity.getRedirectURL()
     : '';
 }
 
@@ -38,7 +38,7 @@ var PACE_MS = 1500;
 var MAX_ATTEMPTS = 3;
 
 async function getOAuthLock() {
-  const { oauthLock } = await browserAPI.storage.session.get({ oauthLock: 0 });
+  const { oauthLock } = await api.storage.session.get({ oauthLock: 0 });
   return oauthLock;
 }
 
@@ -47,7 +47,7 @@ var running = false;
 function sleep(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 
 async function getState() {
-  var s = await browserAPI.storage.local.get({
+  var s = await api.storage.local.get({
     settings: DEFAULTS, solved: {}, queue: [], lastError: null, lastSync: null,
     lastScanResults: null, importStatus: null, isSyncing: null, lastImport: null
   });
@@ -55,7 +55,7 @@ async function getState() {
   return s;
 }
 
-function setError(msg) { return browserAPI.storage.local.set({ lastError: msg }); }
+function setError(msg) { return api.storage.local.set({ lastError: msg }); }
 
 // ---------- Structured Logging (persisted last 500 lines, token masked) ----------
 
@@ -67,7 +67,7 @@ function maskToken(str) {
 }
 
 async function appendLog(level, message, details) {
-  if (!browserAPI || !browserAPI.storage) return;
+  if (!api || !api.storage) return;
   try {
     var d = new Date();
     var timeStr = [d.getHours(), d.getMinutes(), d.getSeconds()]
@@ -79,13 +79,13 @@ async function appendLog(level, message, details) {
       message: maskToken(message),
       details: details ? JSON.parse(maskToken(JSON.stringify(details))) : null
     };
-    var data = await browserAPI.storage.local.get({ logs: [] });
+    var data = await api.storage.local.get({ logs: [] });
     var logs = data.logs || [];
     logs.push(item);
     if (logs.length > 2000) logs = logs.slice(logs.length - 2000);
-    await browserAPI.storage.local.set({ logs: logs });
-    if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-      browserAPI.runtime.sendMessage({ type: 'logAdded', log: item }).catch(function () {});
+    await api.storage.local.set({ logs: logs });
+    if (api.runtime && api.runtime.sendMessage) {
+      api.runtime.sendMessage({ type: 'logAdded', log: item }).catch(function () {});
     }
   } catch (e) {
     console.warn('[LeetSync Log]', e);
@@ -577,8 +577,8 @@ async function ensureRepoInitialized(s) {
   if (corrected && corrected !== s.branch) {
     s.branch = corrected;
     try {
-      var data = await browserAPI.storage.local.get({ settings: {} });
-      await browserAPI.storage.local.set({ settings: Object.assign({}, data.settings || {}, { branch: corrected }) });
+      var data = await api.storage.local.get({ settings: {} });
+      await api.storage.local.set({ settings: Object.assign({}, data.settings || {}, { branch: corrected }) });
       await appendLog('INFO', 'Branch corrected to repo default "' + corrected + '".');
     } catch (e3) {}
   }
@@ -589,14 +589,14 @@ async function ensureRepoInitialized(s) {
 
 async function loadRepoIndex() {
   try {
-    var d = await browserAPI.storage.local.get({ repoIndex: null });
+    var d = await api.storage.local.get({ repoIndex: null });
     return (d.repoIndex && d.repoIndex.problems) ? d.repoIndex.problems : null;
   } catch (e) { return null; }
 }
 
 async function persistRepoIndex(problems) {
   try {
-    await browserAPI.storage.local.set({ repoIndex: { problems: problems, timestamp: Date.now() } });
+    await api.storage.local.set({ repoIndex: { problems: problems, timestamp: Date.now() } });
   } catch (e) {}
 }
 
@@ -908,9 +908,9 @@ async function processQueue() {
   if (running) return;
   running = true;
   var attempts = 0;
-  await browserAPI.storage.local.set({ isSyncing: true });
-  if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-    browserAPI.runtime.sendMessage({ type: 'syncStatusChanged', isSyncing: true }).catch(function () {});
+  await api.storage.local.set({ isSyncing: true });
+  if (api.runtime && api.runtime.sendMessage) {
+    api.runtime.sendMessage({ type: 'syncStatusChanged', isSyncing: true }).catch(function () {});
   }
 
   try {
@@ -935,7 +935,7 @@ async function processQueue() {
         batch.forEach(function (it) { applyItem(solved, it); });
         var ids = batch.map(function (b) { return b.submissionId; });
         var rest = fresh.queue.filter(function (q) { return ids.indexOf(q.submissionId) === -1; });
-        await browserAPI.storage.local.set({ solved: solved, queue: rest, lastError: null, lastSync: Date.now() });
+        await api.storage.local.set({ solved: solved, queue: rest, lastError: null, lastSync: Date.now() });
         await appendLog('INFO', 'Sync: committed ' + batch.length + ' solution(s) (' + rest.length + ' remaining in queue).');
         attempts = 0;
         if (rest.length) await sleep(PACE_MS);
@@ -968,9 +968,9 @@ async function processQueue() {
     }
   } finally {
     running = false;
-    await browserAPI.storage.local.set({ isSyncing: false });
-    if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-      browserAPI.runtime.sendMessage({ type: 'syncStatusChanged', isSyncing: false }).catch(function () {});
+    await api.storage.local.set({ isSyncing: false });
+    if (api.runtime && api.runtime.sendMessage) {
+      api.runtime.sendMessage({ type: 'syncStatusChanged', isSyncing: false }).catch(function () {});
     }
   }
 }
@@ -989,7 +989,7 @@ async function enqueue(it) {
   // newer accepted solution for same problem+language replaces an older queued one
   var queue = st.queue.filter(function (q) { return !(q.slug === it.slug && q.ext === it.ext); });
   queue.push(it);
-  await browserAPI.storage.local.set({ queue: queue });
+  await api.storage.local.set({ queue: queue });
   await appendLog('INFO', 'Queued: ' + it.id + '. ' + it.title + ' (' + (it.langName || it.ext) + ') - queue size: ' + queue.length);
   // A fresh accepted submission means the account's submission list changed;
   // force-refresh it (single-flight) so the solved list stays accurate.
@@ -1509,8 +1509,8 @@ async function leetPace() {
 
 async function getCsrfToken() {
   try {
-    if (browserAPI && browserAPI.cookies && browserAPI.cookies.get) {
-      var c = await browserAPI.cookies.get({ url: 'https://leetcode.com', name: 'csrftoken' });
+    if (api && api.cookies && api.cookies.get) {
+      var c = await api.cookies.get({ url: 'https://leetcode.com', name: 'csrftoken' });
       return (c && c.value) ? c.value : '';
     }
   } catch (e) {}
@@ -1699,7 +1699,7 @@ async function applyAcceptedSet(acceptedSlugs, catalog, reason) {
   var st = await getState();
   var catalog2 = catalog || (await getQuestionCatalog());
   var rec = reconcileSolved(acceptedSlugs, st.solved || {}, catalog2);
-  await browserAPI.storage.local.set({ solved: rec.solved });
+  await api.storage.local.set({ solved: rec.solved });
 
   if (rec.duplicates.length) {
     await appendLog('WARN', 'Solved reconcile (' + reason + '): merged ' + rec.duplicates.length + ' duplicate problem-id entr(ies), e.g. ' +
@@ -1709,7 +1709,7 @@ async function applyAcceptedSet(acceptedSlugs, catalog, reason) {
     await appendLog('WARN', 'Solved reconcile (' + reason + '): removed ' + rec.revoked.length + ' entries without an accepted submission: ' +
       rec.revoked.slice(0, 20).map(function (r) { return r.slug + (r.id != null ? ' (#' + r.id + ')' : ''); }).join(', ') +
       (rec.revoked.length > 20 ? '…' : ''));
-    try { await browserAPI.storage.local.set({ lastRevoked: { reason: reason, revoked: rec.revoked, timestamp: Date.now() } }); } catch (e) {}
+    try { await api.storage.local.set({ lastRevoked: { reason: reason, revoked: rec.revoked, timestamp: Date.now() } }); } catch (e) {}
   }
   return { count: Object.keys(rec.solved).length, duplicates: rec.duplicates, revoked: rec.revoked };
 }
@@ -1730,7 +1730,7 @@ function catalogAcceptedMap(catalog) {
 async function syncCatalog() {
   try {
     var catalog = await getQuestionCatalog(true);
-    var cached = (await browserAPI.storage.local.get({ submissionsAccepted: {} })).submissionsAccepted || {};
+    var cached = (await api.storage.local.get({ submissionsAccepted: {} })).submissionsAccepted || {};
     var accepted = catalogAcceptedMap(catalog);
     Object.keys(cached).forEach(function (slug) {
       if (!accepted[slug]) accepted[slug] = cached[slug];
@@ -1755,10 +1755,10 @@ var submissionsProgress = { running: false, fetched: 0, total: 0, phase: 'idle' 
 
 async function setSubmissionsProgress(patch) {
   submissionsProgress = Object.assign({}, submissionsProgress, patch);
-  try { await browserAPI.storage.local.set({ catalogProgress: submissionsProgress }); } catch (e) {}
+  try { await api.storage.local.set({ catalogProgress: submissionsProgress }); } catch (e) {}
   try {
-    if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-      browserAPI.runtime.sendMessage({ type: 'catalogProgress', status: submissionsProgress }).catch(function () {});
+    if (api.runtime && api.runtime.sendMessage) {
+      api.runtime.sendMessage({ type: 'catalogProgress', status: submissionsProgress }).catch(function () {});
     }
   } catch (e) {}
 }
@@ -1781,7 +1781,7 @@ async function fetchLeetCodeSubmissions(onProgress, force) {
 }
 
 async function _fetchLeetCodeSubmissions(onProgress, force) {
-  var cacheData = await browserAPI.storage.local.get({ submissionsCache: null });
+  var cacheData = await api.storage.local.get({ submissionsCache: null });
   var cache = cacheData.submissionsCache || null;
   if (!force && cache && cache.acceptedBySlug && (Date.now() - (cache.fetchedAt || 0)) < SUBMISSIONS_CACHE_TTL) {
     await appendLog('DEBUG', 'Using cached LeetCode submissions (fetched ' + Math.round((Date.now() - cache.fetchedAt) / 1000) + 's ago, fresh for 10min).');
@@ -1890,7 +1890,7 @@ async function _fetchLeetCodeSubmissions(onProgress, force) {
 
   var rec = await applyAcceptedSet(accepted, catalog, incremental ? 'incremental' : 'full');
 
-  await browserAPI.storage.local.set({ submissionsCache: cacheOut, submissionsAccepted: accepted });
+  await api.storage.local.set({ submissionsCache: cacheOut, submissionsAccepted: accepted });
 
   var count = rec.count;
   await appendLog('INFO', 'Loaded ' + count + ' accepted problem(s) from LeetCode account' +
@@ -1928,7 +1928,7 @@ async function fillMissingTags(repoProblems, settings, forceCommit) {
   if (tagsFilling) return { ok: false, skipped: 'already running' };
   tagsFilling = true;
   try {
-    var cacheData = await browserAPI.storage.local.get({ tagCache: {} });
+    var cacheData = await api.storage.local.get({ tagCache: {} });
     var tagCache = cacheData.tagCache || {};
     var slugs = Object.keys(repoProblems || {}).filter(function (slug) {
       var p = repoProblems[slug];
@@ -1947,14 +1947,14 @@ async function fillMissingTags(repoProblems, settings, forceCommit) {
         changed.push(slug);
         filled++;
       }
-      await browserAPI.storage.local.set({ tagCache: tagCache });
+      await api.storage.local.set({ tagCache: tagCache });
       if (i < slugs.length - 1) await sleep(300);
     }
 
     // Authoritative problem set for README regeneration: persisted repo index
     // overlaid with the in-memory repo problems and the freshly fetched tags.
     var existing = null;
-    try { existing = (await browserAPI.storage.local.get({ repoIndex: null })).repoIndex; } catch (e) {}
+    try { existing = (await api.storage.local.get({ repoIndex: null })).repoIndex; } catch (e) {}
     var full = Object.assign({}, (existing && existing.problems) || {}, repoProblems || {});
     changed.forEach(function (slug) {
       if (!tagCache[slug]) return;
@@ -1962,7 +1962,7 @@ async function fillMissingTags(repoProblems, settings, forceCommit) {
       if (full[slug]) full[slug].tags = tagCache[slug];
     });
     if (filled > 0 && existing && existing.problems) {
-      try { await browserAPI.storage.local.set({ repoIndex: existing }); } catch (e) {}
+      try { await api.storage.local.set({ repoIndex: existing }); } catch (e) {}
     }
 
     var pending = pendingTopicSlugs.concat(changed);
@@ -2202,7 +2202,7 @@ async function scanRepoInventoryInner(customSettings, forceAll) {
 
   try {
     if (!forceAll) {
-      await browserAPI.storage.local.set({
+      await api.storage.local.set({
         lastScanResults: {
           totalSolved: res.totalSolved,
           inRepoCount: res.inRepoCount,
@@ -2295,7 +2295,7 @@ async function createRepoOnGithub(repoName, customSettings, isPrivate) {
   st.settings.repo = data.name;
   st.settings.branch = data.default_branch || 'main';
   if (data.owner && data.owner.login) st.settings.owner = data.owner.login;
-  await browserAPI.storage.local.set({ settings: st.settings });
+  await api.storage.local.set({ settings: st.settings });
   await appendLog('INFO', 'Repository created: ' + data.full_name);
 
   return { ok: true, name: data.name, owner: st.settings.owner, branch: st.settings.branch };
@@ -2324,7 +2324,7 @@ async function hydrateImportItems(items, s) {
     return { items: items, outcomes: outcomes, fatal: false };
   }
 
-  var cacheData = await browserAPI.storage.local.get({ submissionCache: {} });
+  var cacheData = await api.storage.local.get({ submissionCache: {} });
   var cache = cacheData.submissionCache || {};
   var fetched = {};
   var fatal = false;
@@ -2384,7 +2384,7 @@ async function hydrateImportItems(items, s) {
     if (outcomes[k].status === 'pending') outcomes[k].status = 'skipped';
   });
 
-  try { await browserAPI.storage.local.set({ submissionCache: cache }); } catch (e) {}
+  try { await api.storage.local.set({ submissionCache: cache }); } catch (e) {}
 
   var result = [];
   var seen = {};
@@ -2525,7 +2525,7 @@ async function persistImportOutcomes(s, scan, runInfo) {
       if (Array.isArray(summary.reasons[k])) summary.reasons[k] = summary.reasons[k].slice(0, 400);
     });
   }
-  try { await browserAPI.storage.local.set({ lastImport: summary, importOutcomes: summary }); } catch (e) {}
+  try { await api.storage.local.set({ lastImport: summary, importOutcomes: summary }); } catch (e) {}
   return summary;
 }
 
@@ -2681,10 +2681,10 @@ async function executeImport(options) {
       options.retrySlugs.forEach(function (sl) { want[sl] = true; });
       problemOrder = problemOrder.filter(function (sl) { return want[sl]; });
       try {
-        var cd = await browserAPI.storage.local.get({ submissionCache: {} });
+        var cd = await api.storage.local.get({ submissionCache: {} });
         var cc = cd.submissionCache || {};
         problemOrder.forEach(function (sl) { delete cc[sl]; });
-        await browserAPI.storage.local.set({ submissionCache: cc });
+        await api.storage.local.set({ submissionCache: cc });
       } catch (e) {}
       await appendLog('INFO', 'Retry requested for ' + problemOrder.length + ' problem(s) (fetch-failed / auth): ' + problemOrder.slice(0, 20).join(', ') + (problemOrder.length > 20 ? '…' : ''));
       if (!problemOrder.length) {
@@ -2719,7 +2719,7 @@ async function executeImport(options) {
       retry: !!(options.retrySlugs && options.retrySlugs.length),
       commits: []
     };
-    await browserAPI.storage.local.set({ importStatus: currentImportStatus });
+    await api.storage.local.set({ importStatus: currentImportStatus });
 
     await appendLog('INFO', '🚀 Starting import of ' + totalProblems + ' problem(s) in ' + totalBatches + ' batch(es)...');
 
@@ -2744,7 +2744,7 @@ async function executeImport(options) {
       batchSlugs.forEach(function (sl) { batchItems = batchItems.concat(itemsBySlug[sl] || []); });
 
       currentImportStatus.currentBatch = b + 1;
-      await browserAPI.storage.local.set({ importStatus: currentImportStatus });
+      await api.storage.local.set({ importStatus: currentImportStatus });
       await appendLog('INFO', '📦 Batch ' + (b + 1) + '/' + totalBatches + ' starting (' + batchSlugs.length + ' problems)...');
 
       // Smooth progress ticks while the batch is processed.
@@ -2753,9 +2753,9 @@ async function executeImport(options) {
         var currentItem = itemsBySlug[batchSlugs[idx]][0] || { id: '', title: batchSlugs[idx] };
         currentImportStatus.currentProblem = currentItem.id + '. ' + currentItem.title;
         currentImportStatus.pct = Math.round(((processedProblems + idx) / totalProblems) * 100);
-        await browserAPI.storage.local.set({ importStatus: currentImportStatus });
-        if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-          try { browserAPI.runtime.sendMessage({ type: 'importTick', status: currentImportStatus }).catch(function () {}); } catch (e) {}
+        await api.storage.local.set({ importStatus: currentImportStatus });
+        if (api.runtime && api.runtime.sendMessage) {
+          try { api.runtime.sendMessage({ type: 'importTick', status: currentImportStatus }).catch(function () {}); } catch (e) {}
         }
         await sleep(20);
       }
@@ -2823,7 +2823,7 @@ async function executeImport(options) {
             commitsList.unshift({ text: 'Batch ' + (b + 1) + ' committed (' + written + ' problems, sha: ' + commitSha + ')', time: timeStr });
           }
           currentImportStatus.commits = commitsList;
-          await browserAPI.storage.local.set({ solved: importState.solved, importStatus: currentImportStatus, lastSync: Date.now() });
+          await api.storage.local.set({ solved: importState.solved, importStatus: currentImportStatus, lastSync: Date.now() });
           // If this batch actually committed, its tree already includes an
           // up-to-date root README, so the final standalone README commit can be
           // folded into it (fewer commits).
@@ -2851,7 +2851,7 @@ async function executeImport(options) {
       processedProblems += batchSlugs.length;
       currentImportStatus.imported = processedProblems;
       currentImportStatus.pct = Math.round((processedProblems / totalProblems) * 100);
-      await browserAPI.storage.local.set({ importStatus: currentImportStatus });
+      await api.storage.local.set({ importStatus: currentImportStatus });
 
       // One line per batch reporting the REAL reason per problem.
       var batchLine = 'Batch ' + (b + 1) + '/' + totalBatches + ': ' + batchSlugs.length + ' problems - ' +
@@ -2888,7 +2888,7 @@ async function executeImport(options) {
     currentImportStatus.pct = (abortedInfo || cancelledImport) ? currentImportStatus.pct : 100;
     currentImportStatus.imported = processedProblems;
     currentImportStatus.aborted = (abortedInfo || cancelledImport) ? true : false;
-    await browserAPI.storage.local.set({ importStatus: currentImportStatus });
+    await api.storage.local.set({ importStatus: currentImportStatus });
 
     // Re-scan the repo FRESH (no-store) to VERIFY completion. If the last batch
     // already wrote an up-to-date root README, it is folded into that batch and
@@ -2897,7 +2897,7 @@ async function executeImport(options) {
     var stillMissing = (postScan && postScan.missingCount != null) ? postScan.missingCount : Math.max(0, totalProblems - processedProblems);
     var inRepoNow = (postScan && postScan.inRepoCount != null) ? postScan.inRepoCount : null;
     currentImportStatus.stillMissing = stillMissing;
-    await browserAPI.storage.local.set({ importStatus: currentImportStatus });
+    await api.storage.local.set({ importStatus: currentImportStatus });
 
     // Real per-problem reasons for anything the fresh scan still shows missing.
     var stillMissingSlugs = [];
@@ -2998,255 +2998,66 @@ async function completeOAuth(token, extra) {
     }
   } catch (repoErr) {}
 
-  await browserAPI.storage.local.set({ settings: st.settings, lastError: null, oauthState: '' });
+  await api.storage.local.set({ settings: st.settings, lastError: null, oauthState: '' });
   await appendLog('INFO', 'Connected to GitHub account: @' + owner + ' (Repo: ' + st.settings.repo + ')');
-  await browserAPI.storage.session.remove('oauthLock');
+  await api.storage.session.remove('oauthLock');
   return { ok: true, user: owner };
 }
 
-if (browserAPI) {
-  browserAPI.runtime.onMessage.addListener(function (msg) {
-    if (msg.type === 'submission') return enqueue(msg.payload);
-    if (msg.type === 'checkLeetCode') {
-      return checkLeetCodeSession();
-    }
-    if (msg.type === 'syncCatalog') {
-      return syncCatalog();
-    }
-    if (msg.type === 'syncNow') {
-      return (async function () {
-        try {
-          await fetchLeetCodeSubmissions();
-          var scan = await scanRepoInventory();
-          if (scan && scan.missingItems && scan.missingItems.length > 0) {
-            await appendLog('INFO', 'Found ' + scan.missingItems.length + ' unsynced problem(s). Enqueuing for background migration...');
-            for (var i = 0; i < scan.missingItems.length; i++) {
-              await enqueue(scan.missingItems[i]);
-            }
-          }
-        } catch (e) {
-          console.warn('[LeetSync syncNow fetch error]', e);
-        }
-        processQueue();
-        return { started: true };
-      })();
-    }
-    if (msg.type === 'getState') return getState();
-    if (msg.type === 'getLogs') {
-      return browserAPI.storage.local.get({ logs: [] }).then(function (d) { return d.logs || []; });
-    }
-    if (msg.type === 'clearLogs') {
-      return browserAPI.storage.local.set({ logs: [] }).then(function () { return { ok: true }; });
-    }
-    if (msg.type === 'fetchLeetCode') {
-      return fetchLeetCodeSubmissions(null, msg.force === true).catch(function (e) {
-        return { error: e.message };
-      });
-    }
-    if (msg.type === 'getCatalogProgress') {
-      return browserAPI.storage.local.get({ catalogProgress: submissionsProgress }).then(function (d) {
-        return d.catalogProgress || submissionsProgress;
-      });
-    }
-    if (msg.type === 'diagnoseSolved') {
-      return diagnoseSolved().catch(function (e) { return { error: e.message }; });
-    }
-    if (msg.type === 'scanRepo') {
-      return scanRepoInventory(msg.settings, msg.forceAll).catch(function (e) {
-        return { ok: false, error: e.status ? authHint(e) : e.message };
-      });
-    }
-    if (msg.type === 'startImport') {
-      return executeImport(msg.options).catch(function (e) {
-        return { ok: false, error: e.message };
-      });
-    }
-    if (msg.type === 'getImportStatus') {
-      if (currentImportStatus && Object.keys(currentImportStatus).length > 0) {
-        return Promise.resolve(currentImportStatus);
+if (api) {
+  api.runtime.onMessage.addListener(async (msg, sender, sendResponse) => {
+    try {
+      if (msg.type === 'submission') { await enqueue(msg.payload); sendResponse({ok:true}); return true; }
+      if (msg.type === 'checkLeetCode') { sendResponse(await checkLeetCodeSession()); return true; }
+      if (msg.type === 'syncCatalog') { sendResponse(await syncCatalog()); return true; }
+      if (msg.type === 'syncNow') {
+        try { await fetchLeetCodeSubmissions(); const scan = await scanRepoInventory(); if (scan && scan.missingItems && scan.missingItems.length > 0) { await appendLog("INFO","Found "+scan.missingItems.length+" unsynced problem(s). Enqueuing..."); for (let i=0;i<scan.missingItems.length;i++) await enqueue(scan.missingItems[i]); } } catch (e) { console.warn("[LeetSync syncNow]",e); }
+        processQueue(); sendResponse({started:true}); return true;
       }
-      return browserAPI.storage.local.get('importStatus').then(function (res) {
-        return res.importStatus || currentImportStatus || {};
-      });
-    }
-    if (msg.type === 'stopImport') {
-      importCancelled = true;
-      return Promise.resolve({ stopped: true });
-    }
-    if (msg.type === 'retryFailedImport') {
-      return browserAPI.storage.local.get({ importOutcomes: null }).then(function (res) {
-        var outcomes = res.importOutcomes || {};
-        var reasons = (outcomes && outcomes.reasons) || {};
-        var slugs = [];
-        ['fetchFailed', 'auth', 'session'].forEach(function (k) {
-          (reasons[k] || []).forEach(function (r) { if (r && r.slug && slugs.indexOf(r.slug) === -1) slugs.push(r.slug); });
-        });
-        if (!slugs.length) {
-          return { ok: false, error: 'Nothing to retry - no fetch-failed or auth problems recorded.', retrySlugs: [] };
-        }
-        var retryOptions = Object.assign({}, msg.options || {}, { retrySlugs: slugs });
-        return executeImport(retryOptions).catch(function (e) {
-          return { ok: false, error: e.message };
-        });
-      });
-    }
-    if (msg.type === 'getUserRepos') {
-      return fetchUserRepos(msg.settings).catch(function (e) {
-        return { ok: false, error: e.message, repos: [] };
-      });
-    }
-    if (msg.type === 'createRepo') {
-      return createRepoOnGithub(msg.name || msg.repoName, msg.settings, msg.private).catch(function (e) {
-        return { ok: false, error: e.message };
-      });
-    }
-    if (msg.type === 'checkRepo') {
-      return checkRepo(msg.settings).catch(function (e) {
-        return { ok: false, error: e.status ? authHint(e) : e.message };
-      });
-    }
-    if (msg.type === 'testConnection') {
-      return testConnection(msg.settings).catch(function (e) {
-        return { ok: false, error: e.status ? authHint(e) : e.message };
-      });
-    }
-    if (msg.type === 'startGithubOAuth') {
-      return (async function () {
-        const lock = await getOAuthLock();
-        if (lock && Date.now() - lock < 30000) {
-          return { ok: false, error: 'Login already in progress' };
-        }
-        await browserAPI.storage.session.set({ oauthLock: Date.now() });
-        try {
-          const nonce = crypto.randomUUID();
-          const redirectUrl = getOAuthRedirectUri();
-          const state = encodeState(nonce, redirectUrl);
-          
-          await browserAPI.storage.local.set({ oauthState: state });
-          await appendLog('INFO', 'OAuth: extension redirect target = ' + redirectUrl);
-          
-          // Try launchWebAuthFlow first if supported
-          if (browserAPI.identity && browserAPI.identity.launchWebAuthFlow) {
-            try {
-              const authUrl = 'https://github.com/login/oauth/authorize?client_id=' + GITHUB_CLIENT_ID + 
-                '&scope=repo&redirect_uri=' + encodeURIComponent(redirectUrl) +
-                '&state=' + encodeURIComponent(state);
-              
-              await appendLog('INFO', 'OAuth: launching GitHub authorization popup...');
-              const authResultUrl = await browserAPI.identity.launchWebAuthFlow({
-                url: authUrl,
-                interactive: true
-              });
-              
-              const paramStr = (authResultUrl.split('#')[1] || authResultUrl.split('?')[1]) || '';
-              const params = new URLSearchParams(paramStr);
-              const code = params.get('code');
-              const returnedState = params.get('state');
-              const error = params.get('error');
-              const errorDesc = params.get('error_description');
-
-              if (error) {
-                throw new Error('GitHub authorization failed: ' + error + (errorDesc ? ' - ' + decodeURIComponent(errorDesc) : ''));
-              }
-
-              // CSRF: verify returned state matches stored state
-              const storedState = (await browserAPI.storage.local.get({ oauthState: '' })).oauthState;
-              if (!returnedState || returnedState !== storedState) {
-                throw new Error('OAuth state mismatch (CSRF check failed)');
-              }
-
-              // Verify nonce from returned state
-              try {
-                const returnedData = JSON.parse(atob(returnedState));
-                if (returnedData.n !== nonce) throw new Error('Nonce mismatch');
-              } catch (parseErr) {
-                if (parseErr.message === 'Nonce mismatch') throw parseErr;
-              }
-
-              if (!code) {
-                throw new Error('No authorization code in OAuth response');
-              }
-
-              // GitHub redirects straight to the extension URL with ?code=...;
-              // the Worker swaps that code for tokens (it holds the client secret).
-              await appendLog('INFO', 'OAuth: code received, exchanging via Worker /token...');
-              const tokenRes = await fetch(OAUTH_WORKER_URL + '/token', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ code: code, state: state })
-              });
-              let tokenData = null;
-              try { tokenData = await tokenRes.json(); } catch (e) {}
-              if (!tokenRes.ok || !tokenData || !tokenData.access_token) {
-                const why = (tokenData && (tokenData.error_description || tokenData.error)) || ('HTTP ' + tokenRes.status);
-                throw new Error('Worker token exchange failed: ' + (why || 'unknown error'));
-              }
-
-              const extra = {};
-              if (tokenData.refresh_token) extra.refreshToken = tokenData.refresh_token;
-              if (tokenData.expires_in) extra.expiresAt = Date.now() + parseInt(tokenData.expires_in, 10) * 1000;
-              return await completeOAuth(tokenData.access_token, extra);
-            } catch (flowErr) {
-              if (flowErr && flowErr.message && flowErr.message.indexOf('user cancel') !== -1) {
-                await appendLog('INFO', 'OAuth cancelled by user.');
-                await browserAPI.storage.session.remove('oauthLock');
-                return { ok: false, error: 'cancelled', cancelled: true };
-              }
-              throw flowErr;
-            }
-          }
-
-          throw new Error('identity.launchWebAuthFlow is not available in this browser');
-        } catch (err) {
-          await appendLog('ERROR', 'OAuth error: ' + err.message);
-          await browserAPI.storage.session.remove('oauthLock');
-          return { ok: false, error: err.message };
-        }
-      })();
-    }
-    if (msg.type === 'disconnectGithub') {
-      return (async function () {
-        var st = await getState();
-        st.settings.token = '';
-        st.settings.owner = '';
-        await browserAPI.storage.local.set({ settings: st.settings, lastError: null });
-        await appendLog('INFO', 'Disconnected GitHub account.');
-        return { ok: true };
-      })().catch(function (e) { return { ok: false, error: e.message }; });
-    }
-    if (msg.type === 'openOptions') {
-      if (browserAPI.runtime && browserAPI.runtime.openOptionsPage) {
-        return browserAPI.runtime.openOptionsPage();
-      }
-      if (browserAPI.tabs && browserAPI.tabs.create) {
-        return browserAPI.tabs.create({ url: browserAPI.runtime.getURL('options.html') });
-      }
-      return Promise.resolve();
-    }
+      if (msg.type === 'getState') { sendResponse(await getState()); return true; }
+      if (msg.type === 'getLogs') { const d=await api.storage.local.get({logs:[]}); sendResponse(d.logs||[]); return true; }
+      if (msg.type === 'clearLogs') { await api.storage.local.set({logs:[]}); sendResponse({ok:true}); return true; }
+      if (msg.type === 'fetchLeetCode') { try{ sendResponse(await fetchLeetCodeSubmissions(null,msg.force===true)); }catch(e){ sendResponse({error:e.message}); } return true; }
+      if (msg.type === 'getCatalogProgress') { const d=await api.storage.local.get({catalogProgress:submissionsProgress}); sendResponse(d.catalogProgress||submissionsProgress); return true; }
+      if (msg.type === 'diagnoseSolved') { try{ sendResponse(await diagnoseSolved()); }catch(e){ sendResponse({error:e.message}); } return true; }
+      if (msg.type === 'scanRepo') { try{ sendResponse(await scanRepoInventory(msg.settings,msg.forceAll)); }catch(e){ sendResponse({ok:false,error:e.status?authHint(e):e.message}); } return true; }
+      if (msg.type === 'startImport') { try{ sendResponse(await executeImport(msg.options)); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
+      if (msg.type === 'getImportStatus') { if (currentImportStatus&&Object.keys(currentImportStatus).length>0){ sendResponse(currentImportStatus); return true; } const res=await api.storage.local.get("importStatus"); sendResponse(res.importStatus||currentImportStatus||{}); return true; }
+      if (msg.type === 'stopImport') { importCancelled=true; sendResponse({stopped:true}); return true; }
+      if (msg.type === 'retryFailedImport') { const res=await api.storage.local.get({importOutcomes:null}); const outcomes=res.importOutcomes||{}; const reasons=(outcomes&&outcomes.reasons)||{}; const slugs=[]; ["fetchFailed","auth","session"].forEach(k=>{(reasons[k]||[]).forEach(r=>{ if(r&&r.slug&&slugs.indexOf(r.slug)===-1) slugs.push(r.slug); }); }); if(!slugs.length){ sendResponse({ok:false,error:"Nothing to retry - no fetch-failed or auth problems recorded.",retrySlugs:[]}); return true; } const retryOptions=Object.assign({},msg.options||{},{retrySlugs:slugs}); try{ sendResponse(await executeImport(retryOptions)); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
+      if (msg.type === 'getUserRepos') { try{ sendResponse(await fetchUserRepos(msg.settings)); }catch(e){ sendResponse({ok:false,error:e.message,repos:[]}); } return true; }
+      if (msg.type === 'createRepo') { try{ sendResponse(await createRepoOnGithub(msg.name||msg.repoName,msg.settings,msg.private)); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
+      if (msg.type === 'checkRepo') { try{ sendResponse(await checkRepo(msg.settings)); }catch(e){ sendResponse({ok:false,error:e.status?authHint(e):e.message}); } return true; }
+      if (msg.type === 'testConnection') { try{ sendResponse(await testConnection(msg.settings)); }catch(e){ sendResponse({ok:false,error:e.status?authHint(e):e.message}); } return true; }
+      if (msg.type === 'startGithubOAuth') { sendResponse(await (async function(){ const lock=await getOAuthLock(); if(lock&&Date.now()-lock<30000){ return {ok:false,error:"Login already in progress"}; } await api.storage.session.set({oauthLock:Date.now()}); try{ const nonce=crypto.randomUUID(); const redirectUrl=getOAuthRedirectUri(); const state=encodeState(nonce,redirectUrl); await api.storage.local.set({oauthState:state}); await appendLog("INFO","OAuth: extension redirect target = "+redirectUrl); if(api.identity&&api.identity.launchWebAuthFlow){ try{ const authUrl="https://github.com/login/oauth/authorize?client_id="+GITHUB_CLIENT_ID+"&scope=repo&redirect_uri="+encodeURIComponent(redirectUrl)+"&state="+encodeURIComponent(state); await appendLog("INFO","OAuth: launching GitHub authorization popup..."); const authResultUrl=await api.identity.launchWebAuthFlow({url:authUrl,interactive:true}); const paramStr=(authResultUrl.split("#")[1]||authResultUrl.split("?")[1])||""; const params=new URLSearchParams(paramStr); const code=params.get("code"); const returnedState=params.get("state"); const error=params.get("error"); const errorDesc=params.get("error_description"); if(error){ throw new Error("GitHub authorization failed: "+error+(errorDesc?" - "+decodeURIComponent(errorDesc):"")); } const storedState=(await api.storage.local.get({oauthState:""})).oauthState; if(!returnedState||returnedState!==storedState){ throw new Error("OAuth state mismatch (CSRF check failed)"); } try{ const returnedData=JSON.parse(atob(returnedState)); if(returnedData.n!==nonce) throw new Error("Nonce mismatch"); }catch(parseErr){ if(parseErr.message==="Nonce mismatch") throw parseErr; } if(!code){ throw new Error("No authorization code in OAuth response"); } await appendLog("INFO","OAuth: code received, exchanging via Worker /token..."); const tokenRes=await fetch(OAUTH_WORKER_URL+"/token",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({code:code,state:state})}); let tokenData=null; try{ tokenData=await tokenRes.json(); }catch(e){} if(!tokenRes.ok||!tokenData||!tokenData.access_token){ const why=(tokenData&&(tokenData.error_description||tokenData.error))||("HTTP "+tokenRes.status); throw new Error("Worker token exchange failed: "+(why||"unknown error")); } const extra={}; if(tokenData.refresh_token) extra.refreshToken=tokenData.refresh_token; if(tokenData.expires_in) extra.expiresAt=Date.now()+parseInt(tokenData.expires_in,10)*1000; return await completeOAuth(tokenData.access_token,extra); }catch(flowErr){ if(flowErr&&flowErr.message&&flowErr.message.indexOf("user cancel")!==-1){ await appendLog("INFO","OAuth cancelled by user."); await api.storage.session.remove("oauthLock"); return {ok:false,error:"cancelled",cancelled:true}; } throw flowErr; } } throw new Error("identity.launchWebAuthFlow is not available in this browser"); }catch(err){ await appendLog("ERROR","OAuth error: "+err.message); await api.storage.session.remove("oauthLock"); return {ok:false,error:err.message}; } })()); return true; }
+      if (msg.type === 'disconnectGithub') { try{ var st=await getState(); st.settings.token=""; st.settings.owner=""; await api.storage.local.set({settings:st.settings,lastError:null}); await appendLog("INFO","Disconnected GitHub account."); sendResponse({ok:true}); }catch(e){ sendResponse({ok:false,error:e.message}); } return true; }
+      if (msg.type === 'openOptions') { if(api.runtime&&api.runtime.openOptionsPage){ try{ await api.runtime.openOptionsPage(); }catch(e){} sendResponse({ok:true}); return true; } if(api.tabs&&api.tabs.create){ api.tabs.create({url:api.runtime.getURL("options.html")}); sendResponse({ok:true}); return true; } sendResponse({ok:false}); return true; }
+      sendResponse({ok:false,error:"unknown message type"}); return true;
+    } catch (e) { sendResponse({ok:false,error:e.message}); return true; }
   });
 
   async function setupAlarms() {
-    if (!browserAPI || !browserAPI.alarms) return;
+    if (!api || !api.alarms) return;
     try {
       const st = await getState();
       const s = st.settings;
       if (s.periodicSync) {
-        browserAPI.alarms.create('leetsync-periodic', { periodInMinutes: Math.max(1, Number(s.syncInterval) || 15) });
+        api.alarms.create('leetsync-periodic', { periodInMinutes: Math.max(1, Number(s.syncInterval) || 15) });
       } else {
-        browserAPI.alarms.clear('leetsync-periodic');
+        api.alarms.clear('leetsync-periodic');
       }
     } catch (e) {}
   }
 
-  if (browserAPI.alarms) {
-    browserAPI.alarms.onAlarm.addListener(function (alarm) {
+  if (api.alarms) {
+    api.alarms.onAlarm.addListener(function (alarm) {
       if (alarm.name === 'leetsync-periodic') {
         processQueue();
       }
     });
   }
 
-  browserAPI.runtime.onStartup.addListener(function () {
+  api.runtime.onStartup.addListener(function () {
     appendLog('INFO', 'Browser started - resuming queue and catalog sync.');
     processQueue();
     setupAlarms();
@@ -3258,7 +3069,7 @@ if (browserAPI) {
   syncCatalog(); // auto-sync question catalog from LeetCode on startup
 
   // Listen for storage changes from other contexts (popup/options)
-  browserAPI.storage.onChanged.addListener(async (changes, area) => {
+  api.storage.onChanged.addListener(async (changes, area) => {
     if (area === 'local' && changes.settings) {
       // Settings changed, could notify content script if needed
     }

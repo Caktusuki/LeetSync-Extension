@@ -1,14 +1,13 @@
 var $ = function (id) { return document.getElementById(id); };
 
-const browserAPI = (typeof browser !== 'undefined' && browser.runtime) ? browser :
-          (typeof chrome !== 'undefined' && chrome.runtime ? chrome : {
-            runtime: { sendMessage: () => Promise.resolve({}), openOptionsPage: () => {} },
-            storage: { local: { get: (d) => Promise.resolve(d), set: () => Promise.resolve() } }
-          });
+const api = globalThis.browser ?? globalThis.chrome ?? {
+  runtime: { sendMessage: () => Promise.resolve({}), openOptionsPage: () => {} },
+  storage: { local: { get: (d) => Promise.resolve(d), set: () => Promise.resolve() } }
+};
 
 // Listen for real-time storage and runtime broadcasts
-if (browserAPI.storage && browserAPI.storage.onChanged) {
-  browserAPI.storage.onChanged.addListener((changes, area) => {
+if (api.storage && api.storage.onChanged) {
+  api.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
       render();
       if (changes.importStatus && changes.importStatus.newValue) {
@@ -34,8 +33,8 @@ function appendLiveConsoleLog(l) {
   liveConsole.scrollTop = liveConsole.scrollHeight;
 }
 
-if (browserAPI.runtime && browserAPI.runtime.onMessage) {
-  browserAPI.runtime.onMessage.addListener((msg) => {
+if (api.runtime && api.runtime.onMessage) {
+  api.runtime.onMessage.addListener((msg) => {
     if (!msg) return;
     if (msg.type === 'importTick' && msg.status) {
       updateRunningUI(msg.status);
@@ -83,23 +82,21 @@ window.showScreen = function (screenId) {
 
 // Open full options page
 window.openOptionsFullTab = function () {
-  var url = browserAPI.runtime.getURL('options.html');
+  var url = api.runtime.getURL('options.html');
 
   // 1. Tell background script to open options tab (most reliable in unpacked Gecko)
-  if (browserAPI.runtime && browserAPI.runtime.sendMessage) {
-    browserAPI.runtime.sendMessage({ type: 'openOptions' }).catch(function () {});
+  if (api.runtime && api.runtime.sendMessage) {
+    api.runtime.sendMessage({ type: 'openOptions' }).catch(function () {});
   }
 
   // 2. Direct browser tabs API
-  if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {
-    browser.tabs.create({ url: url }).catch(function () {});
-  } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
-    chrome.tabs.create({ url: url });
+  if (api.tabs && api.tabs.create) {
+    try { api.tabs.create({ url: url }).catch(function () {}); } catch (e) { api.tabs.create({ url: url }); }
   }
 
   // 3. Fallback runtime openOptionsPage
-  if (browserAPI.runtime && browserAPI.runtime.openOptionsPage) {
-    try { browserAPI.runtime.openOptionsPage(); } catch (e) {}
+  if (api.runtime && api.runtime.openOptionsPage) {
+    try { api.runtime.openOptionsPage(); } catch (e) {}
   }
 
   // 4. Window open fallback
@@ -132,8 +129,8 @@ window.applyTheme = function (theme) {
     if (chk) chk.style.display = 'inline';
   }
 
-  if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-    browserAPI.storage.local.set({ userTheme: theme });
+  if (api && api.storage && api.storage.local) {
+    api.storage.local.set({ userTheme: theme });
   }
 };
 
@@ -152,8 +149,8 @@ window.applyAccent = function (color) {
     }
   });
 
-  if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-    browserAPI.storage.local.set({ userAccent: color });
+  if (api && api.storage && api.storage.local) {
+    api.storage.local.set({ userAccent: color });
   }
 };
 
@@ -251,7 +248,7 @@ function loadImportScan() {
   }
 
   scanInFlight = true;
-  browserAPI.runtime.sendMessage({ type: 'scanRepo', forceAll: forceOverwrite }).then(function (res) {
+  api.runtime.sendMessage({ type: 'scanRepo', forceAll: forceOverwrite }).then(function (res) {
     scanInFlight = false;
     if (!res || !res.ok) {
       renderScanError(res && res.error);
@@ -278,7 +275,7 @@ window.startImport = function () {
 
   showScreen('screen-import-running');
 
-  browserAPI.runtime.sendMessage({
+  api.runtime.sendMessage({
     type: 'startImport',
     options: { skipExisting: skipExisting, generateProblemReadme: genReadme, forceOverwrite: forceOverwrite }
   }).catch(function (e) {
@@ -291,7 +288,7 @@ window.startImport = function () {
 };
 
 function checkOrPollImport() {
-  browserAPI.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
+  api.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
     if (st && st.running) {
       if (!importPollInterval) importPollInterval = setInterval(pollImportStatus, 250);
       updateRunningUI(st);
@@ -302,7 +299,7 @@ function checkOrPollImport() {
 }
 
 function pollImportStatus() {
-  browserAPI.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
+  api.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
     if (!st) return;
     updateRunningUI(st);
     if (!st.running && (st.pct >= 100 || st.imported === st.total || st.aborted)) {
@@ -402,7 +399,7 @@ function updateRunningUI(st) {
   // Update Live Console Logs inside running screen
   var liveConsole = $('import-live-log');
   if (liveConsole) {
-    browserAPI.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
+    api.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
       if (logs && logs.length) {
         var recentLogs = logs.slice(-15);
         liveConsole.innerHTML = recentLogs.map(function (l) {
@@ -423,7 +420,7 @@ var btnPause = $('btn-pause-import');
 if (btnPause) {
   btnPause.addEventListener('click', function () {
     if (!isPaused) {
-      browserAPI.runtime.sendMessage({ type: 'stopImport' }).then(function () {
+      api.runtime.sendMessage({ type: 'stopImport' }).then(function () {
         isPaused = true;
         btnPause.textContent = '▶ Resume';
       });
@@ -438,7 +435,7 @@ if (btnPause) {
 var btnStop = $('btn-stop-import');
 if (btnStop) {
   btnStop.addEventListener('click', function () {
-    browserAPI.runtime.sendMessage({ type: 'stopImport' }).then(function () {
+    api.runtime.sendMessage({ type: 'stopImport' }).then(function () {
       if (importPollInterval) clearInterval(importPollInterval);
       showScreen('screen-default');
     });
@@ -455,7 +452,7 @@ function loadLogs() {
 
   renderImportSummary();
 
-  browserAPI.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
+  api.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
     if (!logs || !logs.length) {
       list.innerHTML = '<div style="padding: 18px 12px; text-align: center; color: var(--text-muted); font-size: 11px;">No activity recorded yet.</div>';
       if (errBadge) errBadge.textContent = '0';
@@ -499,7 +496,7 @@ function loadLogs() {
 function renderImportSummary() {
   var box = document.getElementById('log-import-summary');
   if (!box) return;
-  browserAPI.runtime.sendMessage({ type: 'getState' }).then(function (st) {
+  api.runtime.sendMessage({ type: 'getState' }).then(function (st) {
     var li = st && st.lastImport;
     if (!li) { box.style.display = 'none'; box.innerHTML = ''; return; }
     var when = li.timestamp ? new Date(li.timestamp).toLocaleString() : '';
@@ -569,7 +566,7 @@ function renderImportSummary() {
 
 window.retryMissing = function () {
   showScreen('screen-import-running');
-  browserAPI.runtime.sendMessage({ type: 'retryFailedImport', options: {} }).then(function (res) {
+  api.runtime.sendMessage({ type: 'retryFailedImport', options: {} }).then(function (res) {
     if (res && res.ok === false && res.error) {
       console.warn('[LeetSync Retry]', res.error);
     }
@@ -629,7 +626,7 @@ window.copyLog = function () {
 };
 
 window.clearLog = function () {
-  browserAPI.runtime.sendMessage({ type: 'clearLogs' }).then(function () {
+  api.runtime.sendMessage({ type: 'clearLogs' }).then(function () {
     loadLogs();
   });
 };
@@ -649,7 +646,7 @@ if (clearLogsBtn) clearLogsBtn.addEventListener('click', function () { window.cl
 // Screen 1: Default Bento Dashboard Live Binding
 // -------------------------------------------------------------
 function render() {
-  browserAPI.runtime.sendMessage({ type: 'getState' }).then(function (st) {
+  api.runtime.sendMessage({ type: 'getState' }).then(function (st) {
     if (!st) return;
     var solved = st.solved || {};
     var allKeys = Object.keys(solved);
@@ -696,7 +693,7 @@ function render() {
     // Auto-fetch catalog if totalCount is 0 to load initial solved problems
     if (totalCount === 0 && !window._isSyncingCatalog) {
       window._isSyncingCatalog = true;
-      browserAPI.runtime.sendMessage({ type: 'syncCatalog' }).then(function () {
+      api.runtime.sendMessage({ type: 'syncCatalog' }).then(function () {
         setTimeout(function () { window._isSyncingCatalog = false; render(); }, 800);
       }).catch(function () { window._isSyncingCatalog = false; });
     }
@@ -778,7 +775,7 @@ function render() {
     }
 
     // Check LeetCode active session
-    browserAPI.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
+    api.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
       var lcDot = $('sync-lc-dot');
       var lcText = $('sync-lc-text');
       var lcBanner = $('lc-unlinked-banner');
@@ -910,7 +907,7 @@ var btnSync = $('btn-sync');
 if (btnSync) {
   btnSync.addEventListener('click', function () {
     btnSync.innerHTML = '<span>⏳</span><span>Syncing...</span>';
-    browserAPI.runtime.sendMessage({ type: 'syncNow' }).then(function () {
+    api.runtime.sendMessage({ type: 'syncNow' }).then(function () {
       setTimeout(function () {
         btnSync.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><span>Sync now</span>';
         render();
@@ -924,7 +921,7 @@ if (btnPopupOAuth) {
   btnPopupOAuth.addEventListener('click', function () {
     btnPopupOAuth.innerHTML = '<span>⏳ Authorizing...</span>';
     btnPopupOAuth.disabled = true;
-    browserAPI.runtime.sendMessage({ type: 'startGithubOAuth' }).then(function (res) {
+    api.runtime.sendMessage({ type: 'startGithubOAuth' }).then(function (res) {
       btnPopupOAuth.innerHTML = '<svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>⚡ Authorize with GitHub (1-Click)</span>';
       btnPopupOAuth.disabled = false;
       if (res && res.ok) {
@@ -940,10 +937,8 @@ if (btnPopupOAuth) {
 
 var openLeetCodeLogin = function () {
   var loginUrl = 'https://leetcode.com/accounts/login/';
-  if (typeof browser !== 'undefined' && browser.tabs && browser.tabs.create) {
-    browser.tabs.create({ url: loginUrl });
-  } else if (typeof chrome !== 'undefined' && chrome.tabs && chrome.tabs.create) {
-    chrome.tabs.create({ url: loginUrl });
+  if (api.tabs && api.tabs.create) {
+    try { api.tabs.create({ url: loginUrl }); } catch (e) { window.open(loginUrl, '_blank'); }
   } else {
     window.open(loginUrl, '_blank');
   }
@@ -957,9 +952,9 @@ if (btnLcLogin) {
 var syncLcText = $('sync-lc-text');
 if (syncLcText) {
   syncLcText.addEventListener('click', function () {
-    browserAPI.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
+    api.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
       if (res && res.loggedIn) {
-        browserAPI.runtime.sendMessage({ type: 'syncNow' });
+        api.runtime.sendMessage({ type: 'syncNow' });
         render();
       } else {
         openLeetCodeLogin();
@@ -1023,7 +1018,7 @@ swatches.forEach(function (sw) {
 });
 
 // Load Saved Theme and Accent
-browserAPI.storage.local.get({ userTheme: 'midnight-bento', userAccent: '#9d72ff' }).then(function (res) {
+api.storage.local.get({ userTheme: 'midnight-bento', userAccent: '#9d72ff' }).then(function (res) {
   if (res.userTheme) applyTheme(res.userTheme);
   if (res.userAccent) applyAccent(res.userAccent);
 });
@@ -1035,23 +1030,23 @@ setInterval(render, 3000);
 // the cache is older than 10 minutes, then run a single repo scan. Never in a
 // loop - the refresh interval above only re-renders.
 function bootstrapPopup() {
-  browserAPI.storage.local.get({ submissionsCache: null }).then(function (d) {
+  api.storage.local.get({ submissionsCache: null }).then(function (d) {
     var cache = d.submissionsCache;
     var fresh = cache && cache.acceptedBySlug && (Date.now() - (cache.fetchedAt || 0)) < 10 * 60 * 1000;
     var afterFetch = function () {
-      browserAPI.runtime.sendMessage({ type: 'scanRepo' }).then(function () { render(); }).catch(function () {});
+      api.runtime.sendMessage({ type: 'scanRepo' }).then(function () { render(); }).catch(function () {});
     };
     if (fresh) {
       afterFetch();
     } else {
-      browserAPI.runtime.sendMessage({ type: 'fetchLeetCode' }).then(afterFetch).catch(afterFetch);
+      api.runtime.sendMessage({ type: 'fetchLeetCode' }).then(afterFetch).catch(afterFetch);
     }
   }).catch(function () {});
 }
 bootstrapPopup();
 
 // Live progress for the account-submissions fetch (shown on the dashboard).
-browserAPI.runtime.onMessage.addListener(function (msg) {
+api.runtime.onMessage.addListener(function (msg) {
   if (msg && msg.type === 'catalogProgress') updateCatalogProgress(msg.status);
 });
 updateCatalogProgress(null);
@@ -1065,7 +1060,7 @@ function updateCatalogProgress(st) {
 }
 
 // Auto-switch to running import screen if active
-browserAPI.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
+api.runtime.sendMessage({ type: 'getImportStatus' }).then(function (st) {
   if (st && st.running) {
     showScreen('screen-import-running');
   }

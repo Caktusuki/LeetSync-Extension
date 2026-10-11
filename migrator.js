@@ -323,17 +323,15 @@ async function migrateImport(settings, solved, missingItems, layout = 'slug', on
 // ─── Message-handler registration (extension context) ────────────────────────
 
 (function registerHandlers() {
-  const _api = typeof browser !== 'undefined' ? browser
-             : typeof chrome  !== 'undefined' ? chrome
-             : null;
-  if (!_api) return;   // Node.js / offline test
+  const api = globalThis.browser ?? globalThis.chrome ?? null;
+  if (!api) return;   // Node.js / offline test
 
-  _api.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
+  api.runtime.onMessage.addListener(function (msg, _sender, sendResponse) {
     if (msg.type === 'migrateScan') {
       (async () => {
         try {
           // Retrieve solved store from extension storage
-          const st = await _api.storage.local.get({ solved: {} });
+          const st = await api.storage.local.get({ solved: {} });
           const result = await migrateScan(msg.settings, st.solved);
           sendResponse(result);
         } catch (e) {
@@ -346,7 +344,7 @@ async function migrateImport(settings, solved, missingItems, layout = 'slug', on
     if (msg.type === 'migrateImport') {
       (async () => {
         try {
-          const st = await _api.storage.local.get({ solved: {} });
+          const st = await api.storage.local.get({ solved: {} });
           const result = await migrateImport(
             msg.settings,
             st.solved,

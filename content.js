@@ -2,9 +2,16 @@
 // fetches the details from LeetCode (same-origin, uses your logged-in session)
 // and hands them to the background script.
 (function () {
-  var browserAPI = (typeof browser !== 'undefined') ? browser : chrome;
+  var api = globalThis.browser ?? globalThis.chrome;
+  // Try MAIN world first (MV3 best); fallback to injecting script element
+  try {
+    if (api && api.scripting && api.scripting.executeScript) {
+      // In MV3, we can inject into MAIN world via executeScript if needed, but easier: inject as file with world MAIN when supported
+      // However, content scripts can't write to page; inject.js can also run in isolated. For now, keep script injection (works in both).
+    }
+  } catch (e) {}
   var s = document.createElement('script');
-  s.src = browserAPI.runtime.getURL('inject.js');
+  s.src = api.runtime.getURL('inject.js');
   s.onload = function () { s.remove(); };
   (document.head || document.documentElement).appendChild(s);
 
@@ -24,7 +31,7 @@
     if (seen.has(id)) return;
     seen.add(id);
     collect(id)
-      .then(function (payload) { return browserAPI.runtime.sendMessage({ type: 'submission', payload: payload }); })
+      .then(function (payload) { return api.runtime.sendMessage({ type: 'submission', payload: payload }); })
       .catch(function (e) { console.warn('[LeetCode GitHub Sync]', e); seen.delete(id); });
   });
 
@@ -124,7 +131,7 @@
             if (!seen.has(id)) {
               seen.add(id);
               collect(id)
-                .then(function (payload) { return browserAPI.runtime.sendMessage({ type: 'submission', payload: payload }); })
+                .then(function (payload) { return api.runtime.sendMessage({ type: 'submission', payload: payload }); })
                 .catch(function (e) { console.warn('[LeetSync]', e); seen.delete(id); });
             }
           }

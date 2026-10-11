@@ -1,12 +1,11 @@
 // LeetSync Settings Page Logic
 var $ = function (id) { return document.getElementById(id); };
 
-const browserAPI = (typeof browser !== 'undefined' && browser.runtime) ? browser :
-             (typeof chrome !== 'undefined' && chrome.runtime ? chrome : null);
+const api = globalThis.browser ?? globalThis.chrome ?? null;
 
 // Listen for storage changes (e.g., token set after OAuth in popup, or theme updated)
-if (browserAPI && browserAPI.storage && browserAPI.storage.onChanged) {
-  browserAPI.storage.onChanged.addListener((changes, area) => {
+if (api && api.storage && api.storage.onChanged) {
+  api.storage.onChanged.addListener((changes, area) => {
     if (area === 'local') {
       if (changes.settings) {
         const newSettings = changes.settings.newValue;
@@ -45,8 +44,8 @@ var DEFAULTS = {
 // Safe storage access (handles direct file:// viewing without throwing errors)
 var storage = {
   get: function (defaults) {
-    if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-      return browserAPI.storage.local.get(defaults);
+    if (api && api.storage && api.storage.local) {
+      return api.storage.local.get(defaults);
     }
     return new Promise(function (resolve) {
       try {
@@ -59,8 +58,8 @@ var storage = {
     });
   },
   set: function (data) {
-    if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-      return browserAPI.storage.local.set(data);
+    if (api && api.storage && api.storage.local) {
+      return api.storage.local.set(data);
     }
     return new Promise(function (resolve) {
       try {
@@ -119,14 +118,14 @@ function checkLeetCodeStatus() {
   text.textContent = 'Checking LeetCode login status...';
   text.style.color = '#f59e0b';
 
-  if (!browserAPI || !browserAPI.runtime) {
+  if (!api || !api.runtime) {
     text.textContent = 'Active (browser extension mode)';
     dot.style.backgroundColor = '#10b981';
     text.style.color = '#10b981';
     return;
   }
 
-  browserAPI.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
+  api.runtime.sendMessage({ type: 'checkLeetCode' }).then(function (res) {
     if (res && res.loggedIn) {
       dot.style.backgroundColor = '#10b981';
       text.textContent = 'Connected to LeetCode' + (res.user ? ' (@' + res.user + ')' : ' (Session Active)');
@@ -222,9 +221,9 @@ function renderFilteredRepos(query) {
 
 function loadUserRepos() {
   var sel = $('repo-select');
-  if (!sel || !browserAPI || !browserAPI.runtime) return;
+  if (!sel || !api || !api.runtime) return;
 
-  browserAPI.runtime.sendMessage({ type: 'getUserRepos' }).then(function (res) {
+  api.runtime.sendMessage({ type: 'getUserRepos' }).then(function (res) {
     if (res && res.ok && res.repos && res.repos.length) {
       cachedUserRepos = res.repos;
       var searchVal = $('repo-search-input') ? $('repo-search-input').value : '';
@@ -322,8 +321,8 @@ storage.get({ settings: DEFAULTS, hideSections: {} }).then(function (res) {
   checkLeetCodeStatus();
   updateActiveRepoBadge();
 
-  if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-    browserAPI.storage.local.get({ userTheme: 'midnight-bento', userAccent: '#9d72ff' }).then(function (tr) {
+  if (api && api.storage && api.storage.local) {
+    api.storage.local.get({ userTheme: 'midnight-bento', userAccent: '#9d72ff' }).then(function (tr) {
       if (tr.userTheme) applyThemeInOptions(tr.userTheme);
       if (tr.userAccent) applyAccentInOptions(tr.userAccent);
     });
@@ -348,8 +347,8 @@ function saveAll(silent) {
     if (btn) btn.textContent = 'Save Configuration';
     if (!silent) showToast('✓ Configuration saved successfully.', true);
     updateAuthUI(s.token, s.owner);
-    if (s.token && browserAPI && browserAPI.runtime) {
-      browserAPI.runtime.sendMessage({ type: 'syncNow' }).catch(function () {});
+    if (s.token && api && api.runtime) {
+      api.runtime.sendMessage({ type: 'syncNow' }).catch(function () {});
     }
   }).catch(function (e) {
     if (btn) btn.textContent = 'Save Configuration';
@@ -380,13 +379,13 @@ function runTest() {
   if (btn) btn.textContent = '⏳ Testing connection...';
   showToast('Connecting to GitHub API...', true);
 
-  if (!browserAPI || !browserAPI.runtime) {
+  if (!api || !api.runtime) {
     if (btn) btn.textContent = 'Test Connection';
     showToast('✓ Token entered. (Running in preview mode)', true);
     return;
   }
 
-  browserAPI.runtime.sendMessage({ type: 'testConnection', settings: s }).then(function (r) {
+  api.runtime.sendMessage({ type: 'testConnection', settings: s }).then(function (r) {
     if (btn) btn.textContent = 'Test Connection';
     if (r && r.ok) {
       if (r.detectedOwner && !s.owner) {
@@ -438,8 +437,8 @@ if ($('btn-auth-toggle')) {
     if (confirm('Disconnect GitHub account? Your saved token will be cleared.')) {
       if ($('token')) $('token').value = '';
       if ($('owner')) $('owner').value = '';
-      if (browserAPI && browserAPI.runtime) {
-        browserAPI.runtime.sendMessage({ type: 'disconnectGithub' }).catch(function () {});
+      if (api && api.runtime) {
+        api.runtime.sendMessage({ type: 'disconnectGithub' }).catch(function () {});
       }
       saveAll(true).then(function () {
         updateAuthUI('', '');
@@ -455,8 +454,8 @@ if ($('btn-oauth-main')) {
     var btn = this;
     btn.innerHTML = '<span>⏳ Authorizing with GitHub...</span>';
     btn.disabled = true;
-    if (browserAPI && browserAPI.runtime) {
-      browserAPI.runtime.sendMessage({ type: 'startGithubOAuth' }).then(function (res) {
+    if (api && api.runtime) {
+      api.runtime.sendMessage({ type: 'startGithubOAuth' }).then(function (res) {
         btn.disabled = false;
         if (res && res.ok) {
           btn.innerHTML = '<svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg><span>✓ Connected to GitHub</span>';
@@ -465,7 +464,7 @@ if ($('btn-oauth-main')) {
           btn.style.color = '#10b981';
           showToast('🎉 GitHub connected successfully as @' + res.user + '!', true);
           // Re-read token from storage (set by background)
-          browserAPI.storage.local.get({ settings: {} }).then(function (r) {
+          api.storage.local.get({ settings: {} }).then(function (r) {
             updateAuthUI(r.settings.token, r.settings.owner);
             loadUserRepos();
           });
@@ -518,8 +517,8 @@ if ($('opt-theme-select')) {
   $('opt-theme-select').addEventListener('change', function () {
     var theme = this.value;
     applyThemeInOptions(theme);
-    if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-      browserAPI.storage.local.set({ userTheme: theme });
+    if (api && api.storage && api.storage.local) {
+      api.storage.local.set({ userTheme: theme });
     }
   });
 }
@@ -531,8 +530,8 @@ swatchesOpt.forEach(function (sw) {
     var color = this.getAttribute('data-color');
     if (color) {
       applyAccentInOptions(color);
-      if (browserAPI && browserAPI.storage && browserAPI.storage.local) {
-        browserAPI.storage.local.set({ userAccent: color });
+      if (api && api.storage && api.storage.local) {
+        api.storage.local.set({ userAccent: color });
       }
     }
   });
@@ -574,7 +573,7 @@ if ($('btn-create-default-repo')) {
     btn.textContent = '⏳ Creating...';
     btn.disabled = true;
 
-    if (!browserAPI || !browserAPI.runtime) {
+    if (!api || !api.runtime) {
       btn.textContent = "+ Create 'leetcode-solutions' Repo";
       btn.disabled = false;
       showToast('Created repository (preview mode): ' + repoName, true);
@@ -582,7 +581,7 @@ if ($('btn-create-default-repo')) {
       return;
     }
 
-    browserAPI.runtime.sendMessage({ type: 'createRepo', name: repoName, private: true }).then(function (res) {
+    api.runtime.sendMessage({ type: 'createRepo', name: repoName, private: true }).then(function (res) {
       btn.textContent = "+ Create 'leetcode-solutions' Repo";
       btn.disabled = false;
       if (res && res.ok) {
@@ -615,13 +614,13 @@ if ($('btn-scan-repo')) {
     btn.textContent = '⏳ Scanning Target Repository...';
     var s = readSettings();
 
-    if (!browserAPI || !browserAPI.runtime) {
+    if (!api || !api.runtime) {
       btn.textContent = '🔍 Scan Target Repository';
       showToast('Repository scan is available in extension mode.', false);
       return;
     }
 
-    browserAPI.runtime.sendMessage({ type: 'checkRepo', settings: s }).then(function (res) {
+    api.runtime.sendMessage({ type: 'checkRepo', settings: s }).then(function (res) {
       btn.textContent = '🔍 Re-scan Repository';
       if (!res || !res.ok) {
         showToast('Scan failed: ' + ((res && res.error) || 'Could not fetch repo tree'), false);
@@ -654,11 +653,11 @@ if ($('btn-scan-repo')) {
 function refreshLogs() {
   var container = $('logs-container');
   if (!container) return;
-  if (!browserAPI || !browserAPI.runtime) {
+  if (!api || !api.runtime) {
     container.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No activity recorded yet.</div>';
     return;
   }
-  browserAPI.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
+  api.runtime.sendMessage({ type: 'getLogs' }).then(function (logs) {
     if (!logs || !logs.length) {
       container.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center;">No activity recorded yet.</div>';
       return;
@@ -690,8 +689,8 @@ if ($('btn-copy-log')) {
 
 if ($('btn-clear-log')) {
   $('btn-clear-log').addEventListener('click', function () {
-    if (browserAPI && browserAPI.runtime) {
-      browserAPI.runtime.sendMessage({ type: 'clearLogs' }).then(function () {
+    if (api && api.runtime) {
+      api.runtime.sendMessage({ type: 'clearLogs' }).then(function () {
         refreshLogs();
         showToast('Logs cleared.', true);
       });
@@ -700,8 +699,8 @@ if ($('btn-clear-log')) {
 }
 
 // Live log updates: refresh when a new log entry is added
-if (browserAPI && browserAPI.runtime && browserAPI.runtime.onMessage) {
-  browserAPI.runtime.onMessage.addListener(function (msg) {
+if (api && api.runtime && api.runtime.onMessage) {
+  api.runtime.onMessage.addListener(function (msg) {
     if (msg && msg.type === 'logAdded') {
       refreshLogs();
     }
