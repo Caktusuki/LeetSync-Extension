@@ -6,3 +6,7 @@ dist/
 .dev.vars
 .wrangler/
 *.log
+
+*.pem
+key
+keys/

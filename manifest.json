@@ -16,9 +16,9 @@
     }
   },
   "icons": {
-    "16":  "icon-16.png",
-    "32":  "icon-32.png",
-    "48":  "icon-48.png",
+    "16": "icon-16.png",
+    "32": "icon-32.png",
+    "48": "icon-48.png",
     "128": "icon-128.png"
   },
   "permissions": [
@@ -37,19 +37,29 @@
   ],
   "background": {
     "service_worker": "background.js",
-    "scripts": ["background.js"]
+    "scripts": [
+      "background.js"
+    ]
   },
   "content_scripts": [
     {
-      "matches": ["https://leetcode.com/*"],
-      "js": ["content.js"],
+      "matches": [
+        "https://leetcode.com/*"
+      ],
+      "js": [
+        "content.js"
+      ],
       "run_at": "document_start"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["inject.js"],
-      "matches": ["https://leetcode.com/*"],
+      "resources": [
+        "inject.js"
+      ],
+      "matches": [
+        "https://leetcode.com/*"
+      ],
       "use_dynamic_url": false
     }
   ],
@@ -57,14 +67,15 @@
     "default_title": "LeetSync",
     "default_popup": "popup.html",
     "default_icon": {
-      "16":  "icon-16.png",
-      "32":  "icon-32.png",
-      "48":  "icon-48.png",
+      "16": "icon-16.png",
+      "32": "icon-32.png",
+      "48": "icon-48.png",
       "128": "icon-128.png"
     }
   },
   "options_ui": {
     "page": "options.html",
     "open_in_tab": true
-  }
+  },
+  "key": "MIIBIjAKBgkqhkiG9woBAQEFAAOCAQ8AMIIBCgKCAQEAy4R/ds57Qh3IOao0YOPS8kzhiVBcF+tsMgIhKILz6RnwmsauVQqtICxeoeAiCk9HSxA9gzJHhyZYt6MIfHJ+ySVOXsMn/fnh9jLVuBnax4AHqIqIEHLy347Bv7jCNcCvgaivFpAiaAoBt7Q7uxHwdXAfBv7H8hyRgceI41pmRONhLYFy3nf9qcKUEtRZ9q9/TAATNuZWtYlqfQiAfZXEIW+hXsUygLgrJwFia4b4Uhl/1H/6NHhvi1xlsUvwIxFSWtrViWzJHLrKEB8pIAA/qFD7afbKKsMmYGpmrUlA/1RSHJOLVipJ5S4ewnx5SSBXZ3+VkItPKI/4R3Mq4lEF9wIDAQABCg=="
 }

@@ -977,7 +977,7 @@ async function processQueue() {
 
 function authHint(e) {
   if (e.status === 401) return 'GitHub rejected the token (401). Check or regenerate it in settings.';
-  if (e.status === 404) return 'Repository or branch not found (404). Check owner, repo and branch, and that the token can access it.';
+  if (e.status === 404) return 'Repository or branch not found (404). Ensure the LeetSync GitHub App is installed on the selected repo and you have access to it. Install the app at https://github.com/apps/leetsync-workspace.';
   return 'GitHub denied access (403). The token needs Contents: read & write on this repo.';
 }
 
@@ -2230,11 +2230,8 @@ async function fetchUserRepos(customSettings) {
   if (!s.token) throw new Error('GitHub token missing. Authorize GitHub first.');
 
   var allRepos = [];
-  var page = 1;
-  var maxPages = 5;
-
-  while (page <= maxPages) {
-    var res = await fetch('https://api.github.com/user/repos?per_page=100&sort=updated&page=' + page, {
+  try {
+    var instRes = await fetch('https://api.github.com/user/installations', {
       cache: 'no-store',
       headers: {
         'Authorization': 'Bearer ' + s.token,
@@ -2242,26 +2239,40 @@ async function fetchUserRepos(customSettings) {
         'User-Agent': 'LeetSync'
       }
     });
-
-    if (!res.ok) throw new Error('GitHub API HTTP ' + res.status);
-    var list = await res.json();
-    if (!Array.isArray(list) || !list.length) break;
-
-    list.forEach(function (r) {
-      allRepos.push({
-        id: r.id,
-        name: r.name,
-        full_name: r.full_name,
-        private: r.private,
-        default_branch: r.default_branch || 'main',
-        updated_at: r.updated_at
+    if (!instRes.ok) throw new Error('GitHub API HTTP ' + instRes.status);
+    var inst = await instRes.json();
+    var installations = inst.installations || [];
+    for (var i = 0; i < installations.length; i++) {
+      var iid = installations[i].id;
+      var repoRes = await fetch('https://api.github.com/user/installations/' + iid + '/repositories?per_page=100', {
+        cache: 'no-store',
+        headers: {
+          'Authorization': 'Bearer ' + s.token,
+          'Accept': 'application/vnd.github+json',
+          'User-Agent': 'LeetSync'
+        }
       });
-    });
-
-    if (list.length < 100) break;
-    page++;
+      if (repoRes.ok) {
+        var repos = await repoRes.json();
+        var list = repos.repositories || repos || [];
+        if (Array.isArray(list)) {
+          for (var j = 0; j < list.length; j++) {
+            var r = list[j];
+            allRepos.push({
+              id: r.id,
+              name: r.name,
+              full_name: r.full_name,
+              private: r.private,
+              default_branch: r.default_branch || 'main',
+              updated_at: r.updated_at
+            });
+          }
+        }
+      }
+    }
+  } catch (e) {
+    throw e;
   }
-
   return { ok: true, repos: allRepos };
 }
 

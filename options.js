@@ -221,6 +221,7 @@ function renderFilteredRepos(query) {
 
 function loadUserRepos() {
   var sel = $('repo-select');
+  var status = $('repo-search-status');
   if (!sel || !api || !api.runtime) return;
 
   api.runtime.sendMessage({ type: 'getUserRepos' }).then(function (res) {
@@ -231,9 +232,19 @@ function loadUserRepos() {
       updateActiveRepoBadge();
     } else {
       cachedUserRepos = [];
-      sel.innerHTML = '<option value="">No repositories loaded (click ⟳ Repos)</option>';
+      if (res && res.error && /HTTP 404/.test(res.error)) {
+        sel.innerHTML = '<option value="">No repos found. Install the GitHub App on your repo.</option>';
+        if (status) status.innerHTML = 'Install the GitHub App on your solutions repo: <a href="https://github.com/apps/leetsync-workspace" target="_blank" rel="noopener">leetsync-workspace</a>';
+      } else {
+        sel.innerHTML = '<option value="">No repositories loaded (click ⟳ Repos)</option>';
+        if (status) status.textContent = 'No repos returned. Try again or ensure the GitHub App is installed.';
+      }
     }
-  }).catch(function () {});
+  }).catch(function (err) {
+    cachedUserRepos = [];
+    sel.innerHTML = '<option value="">Error loading repos</option>';
+    if (status) status.textContent = 'Error loading repos. Check authorization and app installation.';
+  });
 }
 
 function updateAuthUI(token, owner) {
