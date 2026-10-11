@@ -27,9 +27,9 @@ function isAllowedRedirect(allowedList, redirectUrl) {
     return false;
   }
 }
-const WORKER = 'https://leetsync-oauth.caktusuki.workers.dev';
+const WORKER = 'https://leetsync-oauth.cactusuki.workers.dev';
 const workerCallback = WORKER + '/callback';
-assert.strictEqual(workerCallback, 'https://leetsync-oauth.caktusuki.workers.dev/callback', 'worker callback');
+assert.strictEqual(workerCallback, 'https://leetsync-oauth.cactusuki.workers.dev/callback', 'worker callback');
 const allowed = ['https://<chrome-id>.chromiumapp.org/', 'https://<hash>.extensions.allizom.org/'];
 assert.strictEqual(isAllowedRedirect(allowed, 'https://a1b2c3d4e5f6g7h8.chromiumapp.org/'), true);
 assert.strictEqual(isAllowedRedirect(allowed, 'https://deadbeef12345678.extensions.allizom.org/'), true);
