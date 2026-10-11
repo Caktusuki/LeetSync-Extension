@@ -1,0 +1,8 @@
+node_modules/
+dist/
+*.zip
+*.bak
+.env
+.dev.vars
+.wrangler/
+*.log

@@ -1,0 +1,1015 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetSync</title>
+<style>
+  :root {
+    --bg-frame: #0c0e17;
+    --bg-card: #131625;
+    --bg-card-subtle: #181c2e;
+    --bg-pill: #1b1f31;
+    --border: #202538;
+    --border-subtle: #191d2c;
+    --text-main: #ffffff;
+    --text-muted: #8a92b2;
+    --text-dim: #565e79;
+    --accent: #9d72ff;
+    --accent-glow: rgba(157, 114, 255, 0.35);
+    --easy: #10b981;
+    --med: #f59e0b;
+    --hard: #f43f5e;
+  }
+
+  /* Theme overrides */
+  body.theme-macos-glass {
+    --bg-frame: #e9eef5;
+    --bg-card: rgba(255, 255, 255, 0.85);
+    --bg-card-subtle: #f1f5f9;
+    --bg-pill: #e2e8f0;
+    --border: #cbd5e1;
+    --text-main: #0f172a;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --accent: #0284c7;
+    --accent-glow: rgba(2, 132, 199, 0.25);
+  }
+  body.theme-classic-platinum {
+    --bg-frame: #c0c0c0;
+    --bg-card: #dcdcdc;
+    --bg-card-subtle: #eaeaea;
+    --bg-pill: #ffffff;
+    --border: #808080;
+    --text-main: #000000;
+    --text-muted: #444444;
+    --text-dim: #777777;
+    --accent: #000080;
+    --accent-glow: rgba(0, 0, 128, 0.2);
+  }
+  body.theme-soft-bento {
+    --bg-frame: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-card-subtle: #f1f5f9;
+    --bg-pill: #f1f5f9;
+    --border: #e2e8f0;
+    --text-main: #1e293b;
+    --text-muted: #64748b;
+    --text-dim: #94a3b8;
+    --accent: #ec4899;
+    --accent-glow: rgba(236, 72, 153, 0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html {
+    width: 338px !important;
+    min-width: 338px !important;
+    max-width: 338px !important;
+    background-color: #0c0e17 !important;
+    background: #0c0e17 !important;
+    color: var(--text-main);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    user-select: none;
+    overflow-x: hidden !important;
+  }
+  body {
+    width: 338px !important;
+    min-width: 338px !important;
+    max-width: 338px !important;
+    background-color: #0c0e17 !important;
+    background: #0c0e17 !important;
+    color: var(--text-main);
+    padding: 14px;
+    min-height: 520px !important;
+    position: relative !important;
+    isolation: isolate !important;
+    overflow-x: hidden !important;
+  }
+  /* Opaque backdrop layer completely blocks Zen acrylic window bleed-through */
+  body::before {
+    content: "";
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: #0c0e17 !important;
+    background: #0c0e17 !important;
+    z-index: -9999;
+    pointer-events: none;
+  }
+
+  /* Screens Switcher */
+  .screen { display: none; }
+  .screen.active { display: block; animation: fadeIn 0.15s ease-out; }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 12px;
+  }
+  .header-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .logo-box {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 10px var(--accent-glow);
+  }
+  .logo-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .app-name {
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .badge-synced {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2.5px 8px;
+    border-radius: 9999px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--easy);
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .badge-synced .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--easy);
+  }
+  .icon-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .icon-btn:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+  }
+
+  /* Bento Cards */
+  .bento-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: 13px;
+    margin-bottom: 9px;
+  }
+
+  /* Hero Card: 168 */
+  .hero-card {
+    padding: 14px;
+  }
+  .hero-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .pill-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2.5px 8px;
+    border-radius: 9999px;
+    background: var(--bg-pill);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+  }
+  .user-tag {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10.5px;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: monospace;
+    padding: 2.5px 9px;
+    border-radius: 9999px;
+    background: var(--bg-pill);
+    border: 1px solid var(--border);
+  }
+  .hero-stat {
+    font-size: 48px;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    line-height: 1;
+    margin-top: 6px;
+  }
+
+  /* Difficulty Bento Grid */
+  .grid-diff {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+  .diff-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 11px 10px;
+  }
+  .diff-card.easy { border-left: 2.5px solid var(--easy); }
+  .diff-card.med  { border-left: 2.5px solid var(--med); }
+  .diff-card.hard { border-left: 2.5px solid var(--hard); }
+  .diff-label {
+    font-size: 11px;
+    font-weight: 700;
+  }
+  .diff-label.easy { color: var(--easy); }
+  .diff-label.med  { color: var(--med); }
+  .diff-label.hard { color: var(--hard); }
+  .diff-val {
+    font-size: 24px;
+    font-weight: 900;
+    margin-top: 3px;
+    line-height: 1;
+  }
+
+  /* Sync status card */
+  .sync-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-size: 11px;
+  }
+  .sync-left { display: flex; flex-direction: column; gap: 2px; }
+  .sync-right { display: flex; flex-direction: column; gap: 2px; text-align: right; font-family: monospace; }
+  .check-green { color: var(--easy); font-weight: bold; }
+  .text-highlight { font-weight: 700; color: var(--text-main); }
+  .text-sub { font-size: 10px; color: var(--text-muted); }
+
+  /* Buttons Row */
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 9px;
+  }
+  .btn-primary {
+    padding: 10px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #a78bfa 0%, var(--accent) 50%, #7c3aed 100%);
+    color: #ffffff;
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    border: 0;
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    transition: filter 0.15s;
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-secondary {
+    padding: 10px;
+    border-radius: 9999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-main);
+    font: inherit;
+    font-size: 11.5px;
+    font-weight: 700;
+    cursor: pointer;
+    text-align: center;
+    transition: background 0.15s;
+  }
+  .btn-secondary:hover { background: var(--bg-card-subtle); }
+
+  /* Recent Solved Section */
+  .recent-section {
+    padding: 11px 13px;
+  }
+  .recent-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .recent-tabs { display: flex; gap: 10px; }
+  .recent-tab.active { font-weight: 700; color: var(--text-main); border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+  .recent-tab { color: var(--text-muted); cursor: pointer; }
+  .recent-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 11px;
+  }
+  .recent-item:last-child { margin-bottom: 0; }
+  .item-name { font-weight: 700; }
+  .item-meta { font-size: 9.5px; color: var(--text-muted); margin-top: 1px; }
+  .badge-level {
+    padding: 2.5px 8px;
+    border-radius: 9999px;
+    font-size: 9.5px;
+    font-weight: 700;
+  }
+  .badge-level.easy { background: rgba(16, 185, 129, 0.12); color: var(--easy); border: 1px solid rgba(16, 185, 129, 0.3); }
+  .badge-level.med  { background: rgba(245, 158, 11, 0.12); color: var(--med); border: 1px solid rgba(245, 158, 11, 0.3); }
+  .badge-level.hard { background: rgba(244, 63, 94, 0.12); color: var(--hard); border: 1px solid rgba(244, 63, 94, 0.3); }
+
+  /* Screen 2: Import Ready styles */
+  .back-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .back-btn:hover { color: var(--text-main); border-color: var(--accent); }
+  .seg-bar {
+    width: 100%;
+    height: 8px;
+    border-radius: 9999px;
+    overflow: hidden;
+    display: flex;
+    background: var(--bg-card-subtle);
+    margin: 8px 0 4px;
+  }
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+  }
+  .switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    display: inline-block;
+  }
+  .switch input { opacity: 0; width: 0; height: 0; }
+  .slider {
+    position: absolute; cursor: pointer;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-color: var(--bg-card-subtle);
+    border: 1px solid var(--border);
+    transition: .3s; border-radius: 20px;
+  }
+  .slider:before {
+    position: absolute; content: "";
+    height: 14px; width: 14px;
+    left: 2px; bottom: 2px;
+    background-color: white;
+    transition: .3s; border-radius: 50%;
+  }
+  input:checked + .slider { background-color: var(--accent); border-color: var(--accent); }
+  input:checked + .slider:before { transform: translateX(16px); }
+
+  /* Screen 3: Import Running styles */
+  .gauge-box {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+  }
+  .gauge-ring {
+    position: relative;
+    width: 72px;
+    height: 72px;
+    flex-shrink: 0;
+  }
+  .gauge-ring svg {
+    width: 100%;
+    height: 100%;
+    transform: rotate(-90deg);
+  }
+
+  /* Screen 4: Themes styles */
+  .themes-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin: 10px 0;
+  }
+  .theme-box {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 10px;
+    cursor: pointer;
+    transition: border 0.15s;
+  }
+  .theme-box.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px var(--accent);
+  }
+  .theme-preview {
+    height: 52px;
+    border-radius: 10px;
+    margin-bottom: 8px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .swatches-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-top: 4px;
+  }
+  .swatch {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .swatch:hover { transform: scale(1.15); }
+  .swatch.active { box-shadow: 0 0 0 2px var(--bg-frame), 0 0 0 4px #ffffff; }
+
+  /* Screen 5: Logs styles */
+  .log-pills {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 10px;
+    overflow-x: auto;
+    white-space: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .log-pills::-webkit-scrollbar { display: none; }
+  .log-pill {
+    padding: 4px 10px;
+    border-radius: 9999px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 10.5px;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: all 0.15s ease;
+  }
+  .log-pill:hover {
+    border-color: var(--accent);
+    color: var(--text-main);
+  }
+  .log-pill.active {
+    background: var(--accent);
+    color: #ffffff;
+    border-color: var(--accent);
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .log-list {
+    max-height: 295px;
+    min-height: 180px;
+    overflow-y: auto;
+    font-family: ui-monospace, monospace;
+    font-size: 10.5px;
+    padding-right: 2px;
+  }
+  .log-list::-webkit-scrollbar {
+    width: 4px;
+  }
+  .log-list::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+  }
+  .log-entry {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 9px;
+    margin-bottom: 6px;
+    line-height: 1.4;
+  }
+</style>
+</head>
+<body class="theme-midnight-bento">
+
+  <!-- ========================================================= -->
+  <!-- SCREEN 1: DEFAULT - MIDNIGHT BENTO (MAIN POPUP)          -->
+  <!-- ========================================================= -->
+  <div id="screen-default" class="screen active">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-left">
+        <div class="logo-box"><img src="icon-128.png" alt="LeetSync"></div>
+        <span class="app-name">LeetSync</span>
+      </div>
+      <div class="header-right">
+        <div class="badge-synced">
+          <span class="dot"></span>
+          <span id="sync-status-badge">synced</span>
+        </div>
+        <button id="btn-to-themes" class="icon-btn" title="Themes Gallery">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="13.5" cy="6.5" r=".7" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".7" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".7" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".7" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.9 0 1.6-.7 1.6-1.7 0-.4-.2-.8-.4-1.1-.3-.3-.4-.7-.4-1.1 0-.9.7-1.7 1.7-1.7h2c3.1 0 5.6-2.5 5.6-5.6C22 6 17.5 2 12 2z"/></svg>
+        </button>
+        <button id="btn-open-settings" class="icon-btn" title="Settings (All Options)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- 1-Click Connect Banner (shown when GitHub is not connected) -->
+    <div id="unconnected-banner" class="bento-card" style="display: none; background: rgba(99, 102, 241, 0.14); border-color: rgba(99, 102, 241, 0.35); padding: 12px; margin-bottom: 9px; text-align: center;">
+      <div style="font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 3px;">Connect GitHub to start syncing</div>
+      <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 9px;">One click asks GitHub for access — zero tokens needed!</div>
+      <button id="btn-popup-oauth" class="btn-primary" style="width: 100%; justify-content: center; padding: 7px 12px; font-size: 11px;">
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <span>⚡ 1-Click Connect GitHub</span>
+      </button>
+    </div>
+
+    <!-- LeetCode Not Linked Banner (shown when LeetCode session is unlinked/logged out) -->
+    <div id="lc-unlinked-banner" class="bento-card" style="display: none; background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.35); padding: 12px; margin-bottom: 9px; text-align: center;">
+      <div style="font-size: 12px; font-weight: 700; color: #ffffff; margin-bottom: 3px;">⚠️ LeetCode Not Linked</div>
+      <div style="font-size: 10px; color: var(--text-muted); margin-bottom: 9px;">Sign in to LeetCode in your browser to auto-sync your solved problems</div>
+      <button id="btn-popup-lc-login" class="btn-primary" style="width: 100%; justify-content: center; padding: 7px 12px; font-size: 11px; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 16px rgba(245, 158, 11, 0.3);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+        <span>🔗 Sign in & Sync LeetCode</span>
+      </button>
+    </div>
+
+    <!-- Hero Card: Total Solved -->
+    <div class="bento-card hero-card">
+      <div class="hero-top">
+        <span class="pill-tag">Total solved</span>
+        <div class="user-tag">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span id="gh-user">@user</span>
+        </div>
+      </div>
+      <div class="hero-stat" id="solved-count">0</div>
+    </div>
+
+    <!-- Difficulty Bento Grid -->
+    <div class="grid-diff">
+      <div class="diff-card easy">
+        <div class="diff-label easy">Easy</div>
+        <div class="diff-val" id="easy-count">0</div>
+      </div>
+      <div class="diff-card med">
+        <div class="diff-label med">Medium</div>
+        <div class="diff-val" id="med-count">0</div>
+      </div>
+      <div class="diff-card hard">
+        <div class="diff-label hard">Hard</div>
+        <div class="diff-val" id="hard-count">0</div>
+      </div>
+    </div>
+
+    <!-- Repo Coverage Bento Card -->
+    <div class="bento-card" style="padding: 11px 13px; margin-bottom: 9px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px;">
+        <span style="font-size: 11px; font-weight: 700; color: var(--text-main);">Repo Sync Coverage</span>
+        <span id="coverage-pct-badge" style="font-size: 9.5px; font-weight: 700; padding: 2px 7px; border-radius: 9999px; background: rgba(99, 102, 241, 0.15); color: var(--accent); border: 1px solid rgba(99, 102, 241, 0.3);">0% Synced</span>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; text-align: center; margin-bottom: 8px;">
+        <div style="background: var(--bg-card-subtle); padding: 5px 4px; border-radius: 8px;">
+          <div id="stat-lc-total" style="font-size: 15px; font-weight: 900; color: var(--accent);">0</div>
+          <div style="font-size: 8.5px; color: var(--text-muted); font-weight: 600;">LeetCode</div>
+        </div>
+        <div style="background: var(--bg-card-subtle); padding: 5px 4px; border-radius: 8px;">
+          <div id="stat-repo-total" style="font-size: 15px; font-weight: 900; color: var(--easy);">0</div>
+          <div style="font-size: 8.5px; color: var(--text-muted); font-weight: 600;">In Repo</div>
+        </div>
+        <div style="background: var(--bg-card-subtle); padding: 5px 4px; border-radius: 8px;">
+          <div id="stat-missing-total" style="font-size: 15px; font-weight: 900; color: var(--med);">0</div>
+          <div style="font-size: 8.5px; color: var(--text-muted); font-weight: 600;">Missing</div>
+        </div>
+      </div>
+
+      <div style="width: 100%; height: 5px; border-radius: 9999px; background: var(--bg-card-subtle); overflow: hidden;">
+        <div id="coverage-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, var(--easy), var(--accent)); transition: width 0.4s ease;"></div>
+      </div>
+      <div id="catalog-progress" style="display: none; margin-top: 7px; font-size: 10px; color: var(--text-muted); font-family: ui-monospace, monospace;"></div>
+    </div>
+
+    <!-- Sync status card -->
+    <div class="bento-card sync-card">
+      <div class="sync-left">
+        <div class="text-highlight"><span id="sync-headline-icon" class="check-green">✓</span> <span id="sync-headline">All synced</span></div>
+        <div class="text-sub" id="queue-sub">0 pending · 0 failed</div>
+        <div class="text-sub" id="last-sync-time">no sync yet</div>
+      </div>
+      <div class="sync-right">
+        <div><span id="sync-lc-dot" class="check-green">✓</span> <span id="sync-lc-text">LeetCode</span></div>
+        <div><span id="sync-gh-dot" class="check-green">✓</span> GitHub</div>
+        <div class="text-sub" id="repo-name">not connected</div>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button id="btn-sync" class="btn-primary">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        <span>Sync now</span>
+      </button>
+      <button id="btn-to-import" class="btn-secondary">
+        Import history
+      </button>
+    </div>
+
+    <!-- Recent Solved Section -->
+    <div class="bento-card recent-section">
+      <div class="recent-header">
+        <div class="recent-tabs">
+          <span class="recent-tab active">Recent</span>
+          <span id="tab-log" class="recent-tab" style="font-family: monospace;">&gt;_ Log</span>
+        </div>
+        <span id="link-see-all" class="recent-tab" style="font-size: 10px;">See all</span>
+      </div>
+
+      <div id="recent-list">
+        <div style="padding: 14px 6px; text-align: center; color: var(--text-muted); font-size: 11px;">
+          No submissions synced yet.
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ========================================================= -->
+  <!-- SCREEN 2: IMPORT PAST SOLUTIONS                          -->
+  <!-- ========================================================= -->
+  <div id="screen-import-ready" class="screen">
+    <div class="header">
+      <div class="header-left">
+        <button id="btn-back-import-ready" class="back-btn">←</button>
+        <span class="app-name">Import past solutions</span>
+      </div>
+    </div>
+
+    <!-- Hero Card: Found on LeetCode -->
+    <div class="bento-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span class="pill-tag" style="color: var(--accent);">Found on LeetCode</span>
+        <div style="display: flex; align-items: center; gap: 6px;">
+          <span id="import-scan-status" style="font-size: 10px; color: var(--text-muted); font-family: monospace;">scanning...</span>
+          <button id="btn-retry-scan" class="btn-secondary" style="display: none; padding: 2px 8px; font-size: 9.5px;">↻ Retry</button>
+        </div>
+      </div>
+      <div style="display: flex; align-items: baseline; gap: 8px;">
+        <span id="import-hero-count" style="font-size: 38px; font-weight: 900; line-height: 1;">0</span>
+        <div style="font-size: 11px; line-height: 1.2;">
+          <span id="import-hero-sub1" style="color: var(--text-muted);">accepted problems</span><br>
+          <span id="import-hero-sub2" style="color: var(--text-dim);">checking repository...</span>
+        </div>
+      </div>
+
+      <!-- Segmented Bar -->
+      <div class="seg-bar">
+        <div id="import-seg-easy" style="width: 33.3%; background: var(--easy); transition: width 0.3s;"></div>
+        <div id="import-seg-med" style="width: 33.3%; background: var(--med); transition: width 0.3s;"></div>
+        <div id="import-seg-hard" style="width: 33.3%; background: var(--hard); transition: width 0.3s;"></div>
+      </div>
+      <div style="display: flex; justify-content: space-between; font-size: 10px; font-weight: 700; margin-top: 4px;">
+        <span style="color: var(--easy);">EASY <span id="import-cnt-easy" style="color: var(--text-muted);">0</span></span>
+        <span style="color: var(--med);">MED <span id="import-cnt-med" style="color: var(--text-muted);">0</span></span>
+        <span style="color: var(--hard);">HARD <span id="import-cnt-hard" style="color: var(--text-muted);">0</span></span>
+      </div>
+    </div>
+
+    <!-- Toggles & Options -->
+    <div class="bento-card" style="padding: 4px 6px;">
+      <div class="toggle-row" style="border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 11.5px; font-weight: 700;">Skip what's already in the repo</div>
+          <div style="font-size: 10px; color: var(--text-muted);">No duplicate commits</div>
+        </div>
+        <label class="switch"><input id="import-skip-existing" type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row" style="border-bottom: 1px solid var(--border);">
+        <div>
+          <div style="font-size: 11.5px; font-weight: 700;">Add a README per problem</div>
+          <div style="font-size: 10px; color: var(--text-muted);">Tags, constraints, runtime</div>
+        </div>
+        <label class="switch"><input id="import-gen-readme" type="checkbox" checked><span class="slider"></span></label>
+      </div>
+      <div class="toggle-row">
+        <div>
+          <div style="font-size: 11.5px; font-weight: 700;">Overwrite existing files</div>
+          <div style="font-size: 10px; color: var(--text-muted);">Force full re-import with latest formatting</div>
+        </div>
+        <label class="switch"><input id="import-force-overwrite" type="checkbox"><span class="slider"></span></label>
+      </div>
+    </div>
+
+    <!-- Pacing Info -->
+    <div class="bento-card" style="display: flex; gap: 10px; align-items: flex-start;">
+      <span style="font-size: 18px;">⏱️</span>
+      <div>
+        <div id="import-pace-time" style="font-size: 11.5px; font-weight: 700;">About 1 min</div>
+        <p id="import-pace-desc" style="font-size: 10px; color: var(--text-muted); line-height: 1.35; margin-top: 2px;">
+          Paced in batches of 20 to stay under GitHub limits. Safe to close, progress is saved.
+        </p>
+      </div>
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn-secondary" id="btn-cancel-import">Cancel</button>
+      <button id="btn-start-import" class="btn-primary">
+        <span>⤓ Start import</span>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ========================================================= -->
+  <!-- SCREEN 3: IMPORTING... (RUNNING)                         -->
+  <!-- ========================================================= -->
+  <div id="screen-import-running" class="screen">
+    <div class="header">
+      <span class="app-name">Importing...</span>
+      <div id="run-badge" class="badge-synced" style="background: rgba(34, 211, 238, 0.12); color: #22d3ee; border-color: rgba(34, 211, 238, 0.3);">
+        <span id="run-badge-dot" class="dot" style="background: #22d3ee;"></span>
+        <span id="run-badge-text">running</span>
+      </div>
+    </div>
+
+    <!-- Radial Progress Card -->
+    <div class="bento-card gauge-box">
+      <div class="gauge-ring">
+        <svg viewBox="0 0 36 36">
+          <path stroke="var(--bg-card-subtle)" stroke-width="3" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+          <path id="running-arc" stroke="var(--accent)" stroke-width="3.2" stroke-linecap="round" stroke-dasharray="0, 100" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+        </svg>
+        <div style="position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+          <span id="run-count-center" style="font-size: 14px; font-weight: 900;">0</span>
+          <span id="run-count-total" style="font-size: 8px; color: var(--text-muted);">of 0</span>
+        </div>
+      </div>
+      <div>
+        <div id="run-pct" style="font-size: 30px; font-weight: 900; line-height: 1;">0%</div>
+        <div id="run-time-left" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">Starting import...</div>
+        <div id="run-commit-stat" style="font-size: 10px; color: var(--text-dim); font-family: monospace; margin-top: 1px;">preparing batch...</div>
+      </div>
+    </div>
+
+    <!-- 3 Stat Blocks -->
+    <div class="grid-diff">
+      <div class="diff-card" style="border: 1px solid var(--border); text-align: center;">
+        <div style="font-size: 10px; color: var(--text-muted);">Imported</div>
+        <div id="stat-imported-box" style="font-size: 19px; font-weight: 900; margin-top: 2px;">0</div>
+      </div>
+      <div class="diff-card" style="border: 1px solid var(--border); text-align: center;">
+        <div style="font-size: 10px; color: var(--text-muted);">Skipped</div>
+        <div id="stat-skipped-box" style="font-size: 19px; font-weight: 900; margin-top: 2px;">0</div>
+      </div>
+      <div class="diff-card" style="border: 1px solid var(--border); text-align: center;">
+        <div style="font-size: 10px; color: var(--text-muted);">Failed</div>
+        <div id="stat-failed-box" style="font-size: 19px; font-weight: 900; margin-top: 2px;">0</div>
+      </div>
+    </div>
+
+    <!-- Active Task -->
+    <div class="bento-card" style="padding: 11px;">
+      <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;">
+        <div style="display: flex; gap: 4px;">
+          <span style="padding: 1px 6px; border-radius: 9999px; background: var(--accent); color: white; font-weight: 700;">Now</span>
+          <span id="run-active-batch" style="color: var(--text-muted);">batch 1 ready</span>
+        </div>
+        <span id="link-full-log" style="color: var(--accent); cursor: pointer; font-weight: 600;">Full log &gt;</span>
+      </div>
+      <div id="run-active-problem" style="font-size: 11.5px; font-weight: 700; margin-bottom: 6px;">Initializing...</div>
+      <div style="width: 100%; height: 5px; border-radius: 9999px; background: var(--bg-card-subtle); overflow: hidden;">
+        <div id="run-active-bar" style="width: 0%; height: 100%; background: var(--accent); transition: width 0.3s;"></div>
+      </div>
+    </div>
+
+    <!-- Commits List -->
+    <div id="run-commits-list" style="font-size: 11px; margin-bottom: 8px;">
+      <div style="display: flex; justify-content: space-between; padding: 4px 6px; color: var(--text-muted);">
+        <span><span class="check-green">✓</span> Initializing commit pipeline</span>
+        <span style="font-family: monospace;">--:--</span>
+      </div>
+    </div>
+
+    <!-- Live Console Output Card -->
+    <div class="bento-card" style="padding: 8px 10px; margin-bottom: 9px; background: var(--bg-card-subtle);">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+        <span style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Live Import Log</span>
+        <span style="font-size: 9px; color: var(--text-dim); font-family: monospace;">live</span>
+      </div>
+      <div id="import-live-log" style="max-height: 80px; overflow-y: auto; font-family: ui-monospace, monospace; font-size: 10px; color: var(--text-muted); line-height: 1.4;">
+        <div style="color: var(--accent);">• Initializing pipeline...</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="btn-row">
+      <button id="btn-pause-import" class="btn-secondary">⏸ Pause</button>
+      <button id="btn-stop-import" class="btn-secondary" style="border-color: rgba(244, 63, 94, 0.4); color: var(--hard);">Stop import</button>
+    </div>
+  </div>
+
+
+  <!-- ========================================================= -->
+  <!-- SCREEN 4: THEMES GALLERY                                 -->
+  <!-- ========================================================= -->
+  <div id="screen-themes" class="screen">
+    <div class="header">
+      <div class="header-left">
+        <button id="btn-back-themes" class="back-btn">←</button>
+        <span class="app-name">Themes</span>
+      </div>
+    </div>
+    <p style="font-size: 11px; color: var(--text-muted); margin-bottom: 8px;">
+      Pick how LeetSync looks. It applies to the popup and dashboard.
+    </p>
+
+    <!-- 2x2 Grid -->
+    <div class="themes-grid">
+      <!-- 1. Midnight Bento -->
+      <div class="theme-box selected" id="tb-midnight-bento" data-theme="midnight-bento">
+        <div class="theme-preview" style="background: #0d0e17; border: 1px solid #202638;">
+          <div style="height: 12px; border-radius: 4px; background: #181c2b;"></div>
+          <div style="display: flex; gap: 4px;">
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #10b981;"></div>
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #f59e0b;"></div>
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #f43f5e;"></div>
+          </div>
+          <div style="width: 50%; height: 8px; border-radius: 4px; background: var(--accent);"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700;">Midnight Bento</div>
+            <div style="font-size: 9px; color: var(--text-muted);">dark · default</div>
+          </div>
+          <span class="theme-check" style="font-size: 11px; color: var(--accent); font-weight: bold;">✓</span>
+        </div>
+      </div>
+
+      <!-- 2. macOS Glass -->
+      <div class="theme-box" id="tb-macos-glass" data-theme="macos-glass">
+        <div class="theme-preview" style="background: linear-gradient(135deg, #dbeafe, #f1f5f9); border: 1px solid #cbd5e1;">
+          <div style="display: flex; gap: 4px; align-items: center;">
+            <div style="width: 10px; height: 10px; border-radius: 50%; border: 2px solid #0284c7;"></div>
+            <div style="width: 30px; height: 6px; border-radius: 3px; background: #cbd5e1;"></div>
+          </div>
+          <div style="height: 8px; border-radius: 9999px; background: #0284c7;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700;">macOS Glass</div>
+            <div style="font-size: 9px; color: var(--text-muted);">light · frosted</div>
+          </div>
+          <span class="theme-check" style="font-size: 11px; color: var(--accent); font-weight: bold; display: none;">✓</span>
+        </div>
+      </div>
+
+      <!-- 3. Classic Platinum -->
+      <div class="theme-box" id="tb-classic-platinum" data-theme="classic-platinum">
+        <div class="theme-preview" style="background: #c0c0c0; border: 2px outset #ffffff;">
+          <div style="height: 8px; background: #000080; color: white; font-size: 6px; padding-left: 2px; font-family: monospace;">Title</div>
+          <div style="height: 16px; background: #ffffff; border: 1px inset #808080;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700;">Classic Platinum</div>
+            <div style="font-size: 9px; color: var(--text-muted);">retro · pixel</div>
+          </div>
+          <span class="theme-check" style="font-size: 11px; color: var(--accent); font-weight: bold; display: none;">✓</span>
+        </div>
+      </div>
+
+      <!-- 4. Soft Bento -->
+      <div class="theme-box" id="tb-soft-bento" data-theme="soft-bento">
+        <div class="theme-preview" style="background: #f8fafc; border: 1px solid #e2e8f0;">
+          <div style="display: flex; gap: 3px;">
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #dcfce7;"></div>
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #fef3c7;"></div>
+            <div style="flex: 1; height: 10px; border-radius: 3px; background: #ffe4e6;"></div>
+          </div>
+          <div style="height: 8px; border-radius: 9999px; background: #334155;"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: baseline;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700;">Soft Bento</div>
+            <div style="font-size: 9px; color: var(--text-muted);">light · pastel</div>
+          </div>
+          <span class="theme-check" style="font-size: 11px; color: var(--accent); font-weight: bold; display: none;">✓</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Accent Selector -->
+    <div class="bento-card" style="padding: 10px 12px; margin-bottom: 12px;">
+      <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
+        <span style="font-weight: 700;">Accent</span>
+        <span style="font-size: 10px; color: var(--text-muted);">Midnight Bento only</span>
+      </div>
+      <div class="swatches-row">
+        <div class="swatch active" data-color="#9d72ff" style="background: #9d72ff;"></div>
+        <div class="swatch" data-color="#22d3ee" style="background: #22d3ee;"></div>
+        <div class="swatch" data-color="#10b981" style="background: #10b981;"></div>
+        <div class="swatch" data-color="#f59e0b" style="background: #f59e0b;"></div>
+        <div class="swatch" data-color="#fb7185" style="background: #fb7185;"></div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-open-options-full" style="width: 100%;">
+      Open Full Extension Settings &rarr;
+    </button>
+  </div>
+
+
+  <!-- ========================================================= -->
+  <!-- SCREEN 5: ACTIVITY LOG                                   -->
+  <!-- ========================================================= -->
+  <div id="screen-logs" class="screen">
+    <div class="header">
+      <div class="header-left">
+        <button id="btn-back-logs" class="back-btn">←</button>
+        <span class="app-name">Activity log</span>
+      </div>
+      <div class="badge-synced">
+        <span class="dot"></span>
+        <span>live</span>
+      </div>
+    </div>
+
+    <!-- Filter Pills -->
+    <div class="log-pills">
+      <button class="log-pill active" data-filter="All">⚡ All</button>
+      <button class="log-pill" data-filter="Sync">🔄 Sync</button>
+      <button class="log-pill" data-filter="Import">⤓ Import</button>
+      <button class="log-pill" data-filter="Errors">
+        <span>⚠️ Errors</span>
+        <span id="log-error-pill-count" style="background: var(--hard); color: white; border-radius: 9999px; padding: 1px 5px; font-size: 9px; font-weight: 800;">0</span>
+      </button>
+    </div>
+
+    <!-- Last import summary (no accepted submission slugs) -->
+    <div id="log-import-summary" style="display: none; margin-bottom: 8px;"></div>
+
+    <!-- Structured Log Rows -->
+    <div class="log-list" id="log-list-container">
+      <div style="padding: 18px 12px; text-align: center; color: var(--text-muted);">
+        Loading logs...
+      </div>
+    </div>
+
+    <!-- Bottom Actions -->
+    <div class="btn-row" style="margin-top: 8px;">
+      <button class="btn-secondary" id="btn-copy-logs" aria-live="polite" style="display: flex; align-items: center; justify-content: center; gap: 5px;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></svg>
+        <span>Copy log</span>
+      </button>
+      <button class="btn-secondary" id="btn-clear-logs" style="display: flex; align-items: center; justify-content: center; gap: 5px; border-color: rgba(244, 63, 94, 0.35); color: var(--hard);">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+        <span>Clear log</span>
+      </button>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

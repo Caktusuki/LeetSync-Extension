@@ -1,0 +1,1076 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeetSync - Midnight Bento Design Prototype</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    /* Midnight Bento Theme Tokens */
+    :root {
+      --accent: #9d72ff;
+      --accent-glow: rgba(157, 114, 255, 0.25);
+      --accent-hover: #b18cff;
+      --easy-color: #10b981;
+      --med-color: #f59e0b;
+      --hard-color: #f43f5e;
+    }
+
+    /* Active Theme Classes */
+    .theme-midnight-bento {
+      --bg-canvas: #090a10;
+      --bg-frame: #0d0e17;
+      --bg-card: #131622;
+      --bg-card-subtle: #181c2b;
+      --bg-card-hover: #1e2336;
+      --border-color: #202638;
+      --border-subtle: #181d2a;
+      --text-main: #ffffff;
+      --text-muted: #8a93b0;
+      --text-dim: #5a627a;
+    }
+
+    .theme-macos-glass {
+      --bg-canvas: #e2e8f0;
+      --bg-frame: rgba(255, 255, 255, 0.85);
+      --bg-card: rgba(255, 255, 255, 0.7);
+      --bg-card-subtle: rgba(241, 245, 249, 0.8);
+      --bg-card-hover: rgba(255, 255, 255, 0.95);
+      --border-color: rgba(203, 213, 225, 0.8);
+      --border-subtle: rgba(226, 232, 240, 0.6);
+      --text-main: #0f172a;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --accent: #0284c7;
+      --accent-glow: rgba(2, 132, 199, 0.2);
+    }
+
+    .theme-classic-platinum {
+      --bg-canvas: #808080;
+      --bg-frame: #c0c0c0;
+      --bg-card: #dcdcdc;
+      --bg-card-subtle: #e8e8e8;
+      --bg-card-hover: #ffffff;
+      --border-color: #808080;
+      --border-subtle: #a0a0a0;
+      --text-main: #000000;
+      --text-muted: #444444;
+      --text-dim: #777777;
+      --accent: #000080;
+      --accent-glow: rgba(0, 0, 128, 0.2);
+    }
+
+    .theme-soft-bento {
+      --bg-canvas: #f1f5f9;
+      --bg-frame: #ffffff;
+      --bg-card: #f8fafc;
+      --bg-card-subtle: #f1f5f9;
+      --bg-card-hover: #e2e8f0;
+      --border-color: #e2e8f0;
+      --border-subtle: #f1f5f9;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --text-dim: #94a3b8;
+      --accent: #ec4899;
+      --accent-glow: rgba(236, 72, 153, 0.2);
+    }
+
+    body {
+      background-color: var(--bg-canvas, #090a10);
+      color: var(--text-main, #ffffff);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      user-select: none;
+    }
+
+    /* Smooth Transitions */
+    .bento-card {
+      background-color: var(--bg-card);
+      border: 1px solid var(--border-color);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .bento-card:hover {
+      border-color: rgba(255, 255, 255, 0.12);
+    }
+
+    /* Fixed log rows */
+    .log-row-figma {
+      display: flex;
+      flex-direction: column;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      background: rgba(255, 255, 255, 0.02);
+      border: 1px solid rgba(255, 255, 255, 0.03);
+    }
+
+    .log-header-figma {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      margin-bottom: 2px;
+    }
+
+    /* Custom Switch Toggle */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 36px;
+      height: 20px;
+    }
+    .toggle-switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--bg-card-subtle);
+      border: 1px solid var(--border-color);
+      transition: .3s; border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute; content: "";
+      height: 14px; width: 14px;
+      left: 2px; bottom: 2px;
+      background-color: white;
+      transition: .3s; border-radius: 50%;
+    }
+    input:checked + .slider {
+      background-color: var(--accent);
+      border-color: var(--accent);
+    }
+    input:checked + .slider:before {
+      transform: translateX(16px);
+    }
+
+    /* Scrollbars */
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+  </style>
+</head>
+<body class="theme-midnight-bento min-h-screen p-3 md:p-6 transition-colors duration-300">
+
+  <!-- ========================================== -->
+  <!-- TOP CONTROLS & FIGMA CANVAS SWITCHER -->
+  <!-- ========================================== -->
+  <header class="max-w-[1700px] mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-4 shadow-xl">
+    <div class="flex items-center gap-3">
+      <!-- LeetSync App Logo -->
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-[#9d72ff] to-[#6d28d9] flex items-center justify-center shadow-lg shadow-[#9d72ff]/25 text-white font-black text-lg">
+        &lt;&gt;
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="font-extrabold text-base tracking-tight text-[var(--text-main)]">LeetSync • Midnight Bento Edition</h1>
+          <span class="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">Figma Specification</span>
+        </div>
+        <p class="text-xs text-[var(--text-muted)]">Pixel-perfect implementation of the 5 frames: Dashboard, Import Ready, Import Running, Themes, and Activity Log.</p>
+      </div>
+    </div>
+
+    <!-- View Mode Switcher -->
+    <div class="flex items-center gap-2 bg-[var(--bg-card-subtle)] p-1 rounded-xl border border-[var(--border-color)]">
+      <button onclick="setViewMode('canvas')" id="btn-mode-canvas" class="px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[var(--accent)] text-white shadow">
+        🖼️ Figma Canvas (5 Screens Side-by-Side)
+      </button>
+      <button onclick="setViewMode('device')" id="btn-mode-device" class="px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all">
+        📱 Interactive Device Mode
+      </button>
+    </div>
+
+    <!-- Live Accent Swatches -->
+    <div class="flex items-center gap-2 bg-[var(--bg-card-subtle)] px-3 py-1.5 rounded-xl border border-[var(--border-color)]">
+      <span class="text-xs font-semibold text-[var(--text-muted)] mr-1">Accent:</span>
+      <button onclick="setAccent('#9d72ff', 'purple')" class="w-5 h-5 rounded-full bg-[#9d72ff] ring-2 ring-white transition-all transform hover:scale-110" title="Purple"></button>
+      <button onclick="setAccent('#22d3ee', 'cyan')" class="w-5 h-5 rounded-full bg-[#22d3ee] hover:ring-2 hover:ring-white/80 transition-all transform hover:scale-110" title="Cyan"></button>
+      <button onclick="setAccent('#10b981', 'green')" class="w-5 h-5 rounded-full bg-[#10b981] hover:ring-2 hover:ring-white/80 transition-all transform hover:scale-110" title="Green"></button>
+      <button onclick="setAccent('#f59e0b', 'amber')" class="w-5 h-5 rounded-full bg-[#f59e0b] hover:ring-2 hover:ring-white/80 transition-all transform hover:scale-110" title="Amber"></button>
+      <button onclick="setAccent('#fb7185', 'coral')" class="w-5 h-5 rounded-full bg-[#fb7185] hover:ring-2 hover:ring-white/80 transition-all transform hover:scale-110" title="Coral"></button>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MODE 1: FIGMA CANVAS VIEW (ALL 5 FRAMES SIDE-BY-SIDE AS IN USER IMAGE)    -->
+  <!-- ========================================================================= -->
+  <main id="canvas-view" class="max-w-[1720px] mx-auto overflow-x-auto pb-8">
+    <div class="flex items-start gap-6 min-w-[1550px]">
+
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <!-- FRAME 1: DEFAULT - MIDNIGHT BENTO (POPUP DASHBOARD)         -->
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <div class="w-[320px] shrink-0 space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)] px-1">
+          <span>Default - Midnight Bento</span>
+          <div class="flex items-center gap-1.5 text-[var(--text-dim)]">
+            <span class="cursor-pointer hover:text-[var(--text-main)]" onclick="openSingleScreen('screen-default')">⤢</span>
+            <span>⤓</span>
+          </div>
+        </div>
+
+        <!-- Frame Container -->
+        <div id="frame-1" class="bg-[var(--bg-frame)] border border-[var(--border-color)] rounded-[26px] p-3.5 shadow-2xl space-y-3 relative overflow-hidden">
+          
+          <!-- Header Bar -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-[var(--accent)] flex items-center justify-center font-mono font-bold text-white text-xs shadow-md shadow-[var(--accent)]/30">
+                &lt;&gt;
+              </div>
+              <span class="font-extrabold text-sm tracking-tight text-[var(--text-main)]">LeetSync</span>
+            </div>
+            <div class="flex items-center gap-2">
+              <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#10b981]/15 border border-[#10b981]/30 text-[#10b981] text-[10px] font-bold">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+                <span>synced</span>
+              </div>
+              <button onclick="navigateTo('screen-themes')" class="w-7 h-7 rounded-lg bg-[var(--bg-card)] border border-[var(--border-color)] hover:border-[var(--accent)] flex items-center justify-center text-[var(--text-muted)] hover:text-[var(--text-main)] transition-colors" title="Settings & Themes">
+                ⚙️
+              </button>
+            </div>
+          </div>
+
+          <!-- Hero Card: Total Solved 168 -->
+          <div class="bento-card rounded-2xl p-4 relative overflow-hidden">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-[var(--bg-card-subtle)] text-[var(--text-muted)] border border-[var(--border-color)]">
+                Total solved
+              </span>
+              <div class="flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[var(--bg-card-subtle)] border border-[var(--border-color)] text-[11px] font-semibold text-[var(--text-muted)]">
+                <span>🐙</span>
+                <span class="font-mono">@Caktusuki</span>
+              </div>
+            </div>
+            <div class="text-5xl font-black tracking-tight text-[var(--text-main)] mt-2" id="val-total-solved">168</div>
+          </div>
+
+          <!-- Bento Grid: Difficulty Breakdown -->
+          <div class="grid grid-cols-3 gap-2">
+            <!-- Easy Card -->
+            <div class="bento-card rounded-2xl p-3 border-l-2 border-l-[#10b981]">
+              <div class="text-[11px] font-bold text-[#10b981]">Easy</div>
+              <div class="text-2xl font-black text-[var(--text-main)] mt-1" id="val-easy-count">127</div>
+            </div>
+            <!-- Medium Card -->
+            <div class="bento-card rounded-2xl p-3 border-l-2 border-l-[#f59e0b]">
+              <div class="text-[11px] font-bold text-[#f59e0b]">Medium</div>
+              <div class="text-2xl font-black text-[var(--text-main)] mt-1" id="val-med-count">37</div>
+            </div>
+            <!-- Hard Card -->
+            <div class="bento-card rounded-2xl p-3 border-l-2 border-l-[#f43f5e]">
+              <div class="text-[11px] font-bold text-[#f43f5e]">Hard</div>
+              <div class="text-2xl font-black text-[var(--text-main)] mt-1" id="val-hard-count">4</div>
+            </div>
+          </div>
+
+          <!-- Sync Status Card (Two Columns) -->
+          <div class="bento-card rounded-2xl p-3 text-[11px]">
+            <div class="grid grid-cols-2 gap-2">
+              <div class="space-y-0.5">
+                <div class="flex items-center gap-1 font-bold text-[var(--text-main)]">
+                  <span class="text-[#10b981]">✓</span> All synced
+                </div>
+                <div class="text-[10px] text-[var(--text-muted)]">0 pending · 0 failed</div>
+                <div class="text-[10px] text-[var(--text-dim)]" id="dash-last-sync">last sync 14:56</div>
+              </div>
+              <div class="space-y-0.5 text-right font-mono">
+                <div class="text-[var(--text-main)] flex items-center justify-end gap-1">
+                  <span class="text-[#10b981]">✓</span> LeetCode
+                </div>
+                <div class="text-[var(--text-main)] flex items-center justify-end gap-1">
+                  <span class="text-[#10b981]">✓</span> GitHub
+                </div>
+                <div class="text-[10px] text-[var(--text-muted)] truncate">leetcode-solutions</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="simulateSyncNow()" id="btn-sync-now" class="py-2.5 px-3 rounded-full bg-[var(--accent)] hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-[var(--accent)]/25 flex items-center justify-center gap-1.5 transition-all">
+              <span>🔄</span>
+              <span>Sync now</span>
+            </button>
+            <button onclick="navigateTo('screen-import-ready')" class="py-2.5 px-3 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-bold border border-[var(--border-color)] flex items-center justify-center transition-all">
+              Import history
+            </button>
+          </div>
+
+          <!-- Recent & Logs Section -->
+          <div class="bento-card rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-xs pb-1 border-b border-[var(--border-color)]">
+              <div class="flex items-center gap-3">
+                <button class="font-bold text-[var(--text-main)] border-b-2 border-[var(--accent)] pb-0.5">Recent</button>
+                <button onclick="navigateTo('screen-logs')" class="font-semibold text-[var(--text-muted)] hover:text-[var(--text-main)] font-mono text-[11px] pb-0.5">&gt;_ Log</button>
+              </div>
+              <button onclick="navigateTo('screen-logs')" class="text-[11px] text-[var(--text-muted)] hover:text-[var(--accent)]">See all</button>
+            </div>
+
+            <!-- Problem items -->
+            <div class="space-y-2 text-xs">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-[var(--text-main)]">1. Two Sum</div>
+                  <div class="text-[10px] text-[var(--text-muted)]">Python 3 · 2m ago</div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#10b981]/15 text-[#10b981] border border-[#10b981]/30">Easy</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-[var(--text-main)]">146. LRU Cache</div>
+                  <div class="text-[10px] text-[var(--text-muted)]">C++ · 1h ago</div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f59e0b]/15 text-[#f59e0b] border border-[#f59e0b]/30">Medium</span>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="font-bold text-[var(--text-main)]">4. Median of Two Sorted Arrays</div>
+                  <div class="text-[10px] text-[var(--text-muted)]">Java · yesterday</div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#f43f5e]/15 text-[#f43f5e] border border-[#f43f5e]/30">Hard</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <!-- FRAME 2: IMPORT - READY                                     -->
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <div class="w-[320px] shrink-0 space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)] px-1">
+          <span>Import - ready</span>
+          <div class="flex items-center gap-1.5 text-[var(--text-dim)]">
+            <span class="cursor-pointer hover:text-[var(--text-main)]" onclick="openSingleScreen('screen-import-ready')">⤢</span>
+            <span>⤓</span>
+          </div>
+        </div>
+
+        <div id="frame-2" class="bg-[var(--bg-frame)] border border-[var(--border-color)] rounded-[26px] p-3.5 shadow-2xl space-y-3 relative overflow-hidden">
+          
+          <!-- Header with Back Button -->
+          <div class="flex items-center gap-2 pt-0.5">
+            <button onclick="navigateTo('screen-default')" class="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]">
+              ←
+            </button>
+            <span class="font-extrabold text-sm tracking-tight text-[var(--text-main)]">Import past solutions</span>
+          </div>
+
+          <!-- Hero: 168 found on LeetCode -->
+          <div class="bento-card rounded-2xl p-4 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] border border-[var(--accent)]/30">
+                Found on LeetCode
+              </span>
+              <span class="text-[10px] text-[var(--text-muted)] font-mono">scan complete</span>
+            </div>
+
+            <div class="flex items-baseline gap-2">
+              <span class="text-4xl font-black tracking-tight text-[var(--text-main)]">168</span>
+              <div class="text-[11px] leading-tight">
+                <span class="text-[var(--text-muted)]">accepted problems</span><br>
+                <span class="text-[var(--text-dim)]">0 in your repo yet</span>
+              </div>
+            </div>
+
+            <!-- Segmented Progress Bar -->
+            <div class="w-full h-2 rounded-full overflow-hidden flex bg-[var(--bg-card-subtle)] mt-2">
+              <div class="h-full bg-[#10b981]" style="width: 75.5%"></div>
+              <div class="h-full bg-[#f59e0b]" style="width: 22%"></div>
+              <div class="h-full bg-[#f43f5e]" style="width: 2.5%"></div>
+            </div>
+
+            <!-- Legend labels -->
+            <div class="flex items-center justify-between text-[10px] font-bold pt-1">
+              <span class="text-[#10b981]">EASY <span class="text-[var(--text-muted)]">127</span></span>
+              <span class="text-[#f59e0b]">MED <span class="text-[var(--text-muted)]">37</span></span>
+              <span class="text-[#f43f5e]">HARD <span class="text-[var(--text-muted)]">4</span></span>
+            </div>
+          </div>
+
+          <!-- Filter / Option Pills -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <!-- Per problem -->
+            <div class="space-y-1">
+              <span class="text-[11px] text-[var(--text-muted)] font-semibold">Per problem</span>
+              <div class="bg-[var(--bg-card)] border border-[var(--border-color)] p-0.5 rounded-full flex text-[11px]">
+                <button class="flex-1 py-1 rounded-full bg-[var(--accent)] text-white font-bold text-center">Latest</button>
+                <button class="flex-1 py-1 rounded-full text-[var(--text-muted)] font-medium text-center">All</button>
+              </div>
+            </div>
+            <!-- Order -->
+            <div class="space-y-1">
+              <span class="text-[11px] text-[var(--text-muted)] font-semibold">Order</span>
+              <div class="bg-[var(--bg-card)] border border-[var(--border-color)] p-0.5 rounded-full flex text-[11px]">
+                <button class="flex-1 py-1 rounded-full bg-[var(--accent)] text-white font-bold text-center">Newest</button>
+                <button class="flex-1 py-1 rounded-full text-[var(--text-muted)] font-medium text-center">Oldest</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Toggle Cards -->
+          <div class="space-y-2">
+            <!-- Toggle 1: Skip duplicates -->
+            <div class="bento-card rounded-2xl p-3 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-[var(--text-main)]">Skip what's already in the repo</div>
+                <div class="text-[10px] text-[var(--text-muted)]">No duplicate commits</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+
+            <!-- Toggle 2: Add README per problem -->
+            <div class="bento-card rounded-2xl p-3 flex items-center justify-between">
+              <div>
+                <div class="text-xs font-bold text-[var(--text-main)]">Add a README per problem</div>
+                <div class="text-[10px] text-[var(--text-muted)]">Tags, constraints, runtime</div>
+              </div>
+              <label class="toggle-switch">
+                <input type="checkbox" checked>
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Pacing callout box -->
+          <div class="bento-card rounded-2xl p-3 flex items-start gap-2.5 bg-[var(--bg-card)]">
+            <div class="w-7 h-7 rounded-full bg-[var(--bg-card-subtle)] flex items-center justify-center text-sm shrink-0 mt-0.5">
+              ⏱️
+            </div>
+            <div>
+              <div class="text-xs font-bold text-[var(--text-main)]">About 5 min</div>
+              <p class="text-[10px] text-[var(--text-muted)] leading-relaxed mt-0.5">
+                9 commits of 20, paced to stay under GitHub limits. Safe to close, progress is saved.
+              </p>
+            </div>
+          </div>
+
+          <!-- Bottom Actions -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="navigateTo('screen-default')" class="py-2.5 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-bold border border-[var(--border-color)]">
+              Cancel
+            </button>
+            <button onclick="startImportWorkflow()" class="py-2.5 rounded-full bg-[var(--accent)] hover:brightness-110 text-white text-xs font-bold shadow-lg shadow-[var(--accent)]/25 flex items-center justify-center gap-1.5">
+              <span>⤓</span>
+              <span>Start import</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <!-- FRAME 3: IMPORT - RUNNING                                   -->
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <div class="w-[320px] shrink-0 space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)] px-1">
+          <span>Import - running</span>
+          <div class="flex items-center gap-1.5 text-[var(--text-dim)]">
+            <span class="cursor-pointer hover:text-[var(--text-main)]" onclick="openSingleScreen('screen-import-running')">⤢</span>
+            <span>⤓</span>
+          </div>
+        </div>
+
+        <div id="frame-3" class="bg-[var(--bg-frame)] border border-[var(--border-color)] rounded-[26px] p-3.5 shadow-2xl space-y-3 relative overflow-hidden">
+          
+          <!-- Header Bar -->
+          <div class="flex items-center justify-between pt-0.5">
+            <span class="font-extrabold text-sm tracking-tight text-[var(--text-main)]">Importing...</span>
+            <div class="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#22d3ee]/15 border border-[#22d3ee]/30 text-[#22d3ee] text-[10px] font-bold">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#22d3ee] animate-pulse"></span>
+              <span>running</span>
+            </div>
+          </div>
+
+          <!-- Radial Progress Hero Card -->
+          <div class="bento-card rounded-2xl p-4 flex items-center gap-4">
+            <!-- Circular Gauge -->
+            <div class="relative w-20 h-20 shrink-0">
+              <svg class="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                <!-- Background Circle -->
+                <path class="text-[var(--bg-card-subtle)]" stroke-width="3" stroke="currentColor" fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <!-- Progress Arc -->
+                <path id="radial-progress-arc" class="text-[var(--accent)]" stroke-width="3" stroke-dasharray="24, 100" stroke-linecap="round" stroke="currentColor" fill="none"
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+              </svg>
+              <!-- Center Text -->
+              <div class="absolute inset-0 flex flex-col items-center justify-center text-center">
+                <span id="radial-imported-val" class="font-black text-sm text-[var(--text-main)] leading-none">40</span>
+                <span class="text-[8px] text-[var(--text-muted)] font-mono mt-0.5">of 168</span>
+              </div>
+            </div>
+
+            <!-- Stats next to gauge -->
+            <div>
+              <div id="radial-percent" class="text-3xl font-black text-[var(--text-main)] tracking-tight">24%</div>
+              <div id="radial-time-left" class="text-[11px] text-[var(--text-muted)] font-medium">About 4 min left</div>
+              <div id="radial-commit-step" class="text-[10px] text-[var(--text-dim)] font-mono mt-0.5">commit 3 of 9</div>
+            </div>
+          </div>
+
+          <!-- 3 Stats Boxes -->
+          <div class="grid grid-cols-3 gap-2 text-center">
+            <div class="bento-card rounded-2xl p-2.5">
+              <div class="text-[10px] text-[var(--text-muted)] font-medium">Imported</div>
+              <div id="stat-run-imported" class="text-xl font-black text-[var(--text-main)] mt-0.5">40</div>
+            </div>
+            <div class="bento-card rounded-2xl p-2.5">
+              <div class="text-[10px] text-[var(--text-muted)] font-medium">Skipped</div>
+              <div id="stat-run-skipped" class="text-xl font-black text-[var(--text-main)] mt-0.5">0</div>
+            </div>
+            <div class="bento-card rounded-2xl p-2.5">
+              <div class="text-[10px] text-[var(--text-muted)] font-medium">Failed</div>
+              <div id="stat-run-failed" class="text-xl font-black text-[var(--text-main)] mt-0.5">0</div>
+            </div>
+          </div>
+
+          <!-- Current Batch Card -->
+          <div class="bento-card rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between text-[10px]">
+              <div class="flex items-center gap-1.5">
+                <span class="px-2 py-0.5 rounded-full bg-[var(--accent)]/15 text-[var(--accent)] font-bold">Now</span>
+                <span id="current-batch-label" class="text-[var(--text-muted)]">batch 3 · 12 of 20 ready</span>
+              </div>
+              <button onclick="navigateTo('screen-logs')" class="text-[var(--accent)] font-semibold hover:underline">Full log &gt;</button>
+            </div>
+            <div id="current-problem-title" class="text-xs font-bold text-[var(--text-main)] truncate">
+              128. Longest Consecutive Sequence
+            </div>
+            <div class="w-full h-1.5 rounded-full bg-[var(--bg-card-subtle)] overflow-hidden">
+              <div id="batch-sub-progress" class="h-full bg-[var(--accent)] transition-all duration-300" style="width: 60%"></div>
+            </div>
+          </div>
+
+          <!-- Commits list -->
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center justify-between px-2 py-1 text-[var(--text-muted)]">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[#10b981] font-bold">✓</span>
+                <span>Commit 2 · 20 problems</span>
+              </div>
+              <span class="font-mono text-[10px] text-[var(--text-dim)]">14:58</span>
+            </div>
+            <div class="flex items-center justify-between px-2 py-1 text-[var(--text-muted)]">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[#10b981] font-bold">✓</span>
+                <span>Commit 1 · 20 problems</span>
+              </div>
+              <span class="font-mono text-[10px] text-[var(--text-dim)]">14:57</span>
+            </div>
+          </div>
+
+          <!-- GitHub limit note -->
+          <div class="flex items-center gap-1.5 px-2 text-[10px] text-[var(--text-muted)]">
+            <span>⏱️</span>
+            <span>Short pause to respect GitHub limits</span>
+          </div>
+
+          <!-- Safe to close footer -->
+          <div class="text-center text-[10px] text-[var(--text-dim)]">
+            Safe to close. Progress is saved and resumes on its own.
+          </div>
+
+          <!-- Bottom Control Buttons -->
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="toggleImportPause()" id="btn-pause-import" class="py-2.5 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-bold border border-[var(--border-color)]">
+              ⏸ Pause
+            </button>
+            <button onclick="stopImportWorkflow()" class="py-2.5 rounded-full bg-[var(--bg-card)] hover:bg-[#f43f5e]/15 text-[#f43f5e] text-xs font-bold border border-[#f43f5e]/40">
+              Stop import
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <!-- FRAME 4: THEMES GALLERY                                     -->
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <div class="w-[320px] shrink-0 space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)] px-1">
+          <span>Themes</span>
+          <div class="flex items-center gap-1.5 text-[var(--text-dim)]">
+            <span class="cursor-pointer hover:text-[var(--text-main)]" onclick="openSingleScreen('screen-themes')">⤢</span>
+            <span>⤓</span>
+          </div>
+        </div>
+
+        <div id="frame-4" class="bg-[var(--bg-frame)] border border-[var(--border-color)] rounded-[26px] p-3.5 shadow-2xl space-y-3 relative overflow-hidden">
+          
+          <!-- Header with Back Button -->
+          <div class="flex items-center gap-2 pt-0.5">
+            <button onclick="navigateTo('screen-default')" class="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]">
+              ←
+            </button>
+            <div>
+              <span class="font-extrabold text-sm tracking-tight text-[var(--text-main)]">Themes</span>
+            </div>
+          </div>
+          <p class="text-[11px] text-[var(--text-muted)] leading-tight px-0.5">
+            Pick how LeetSync looks. It applies to the popup and the dashboard.
+          </p>
+
+          <!-- 2x2 Theme Grid Cards -->
+          <div class="grid grid-cols-2 gap-2.5">
+
+            <!-- Card 1: Midnight Bento -->
+            <div onclick="selectTheme('midnight-bento')" id="tcard-midnight-bento" class="bento-card rounded-2xl p-2.5 cursor-pointer ring-2 ring-[var(--accent)] bg-[var(--bg-card-subtle)] space-y-2">
+              <div class="h-16 rounded-xl bg-[#0d0e17] border border-[#202638] p-1.5 flex flex-col justify-between">
+                <div class="w-full h-4 rounded bg-[#181c2b]"></div>
+                <div class="grid grid-cols-3 gap-1">
+                  <div class="h-3 rounded bg-[#10b981]/40"></div>
+                  <div class="h-3 rounded bg-[#f59e0b]/40"></div>
+                  <div class="h-3 rounded bg-[#f43f5e]/40"></div>
+                </div>
+                <div class="w-1/2 h-2.5 rounded bg-[var(--accent)]"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-[var(--text-main)]">Midnight Bento</div>
+                  <div class="text-[9px] text-[var(--text-muted)]">dark · default</div>
+                </div>
+                <span id="check-midnight-bento" class="text-xs text-[var(--accent)] font-bold">✓</span>
+              </div>
+            </div>
+
+            <!-- Card 2: macOS Glass -->
+            <div onclick="selectTheme('macos-glass')" id="tcard-macos-glass" class="bento-card rounded-2xl p-2.5 cursor-pointer hover:border-[var(--accent)] space-y-2">
+              <div class="h-16 rounded-xl bg-gradient-to-br from-blue-100 to-indigo-100 border border-slate-300 p-1.5 flex flex-col justify-between shadow-inner">
+                <div class="flex items-center gap-1.5">
+                  <div class="w-4 h-4 rounded-full border-2 border-[#0284c7]"></div>
+                  <div class="w-12 h-2 rounded bg-slate-300"></div>
+                </div>
+                <div class="w-full h-3 rounded-full bg-[#0284c7]"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-[var(--text-main)]">macOS Glass</div>
+                  <div class="text-[9px] text-[var(--text-muted)]">light · frosted</div>
+                </div>
+                <span id="check-macos-glass" class="text-xs text-[var(--accent)] font-bold hidden">✓</span>
+              </div>
+            </div>
+
+            <!-- Card 3: Classic Platinum -->
+            <div onclick="selectTheme('classic-platinum')" id="tcard-classic-platinum" class="bento-card rounded-2xl p-2.5 cursor-pointer hover:border-[var(--accent)] space-y-2">
+              <div class="h-16 rounded-xl bg-[#c0c0c0] border-2 border-t-white border-l-white border-b-gray-600 border-r-gray-600 p-1.5 flex flex-col justify-between">
+                <div class="h-3 bg-[#000080] text-[8px] text-white px-1 font-mono">=== Title ===</div>
+                <div class="h-5 bg-white border border-gray-600"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-[var(--text-main)]">Classic Platinum</div>
+                  <div class="text-[9px] text-[var(--text-muted)]">retro · pixel</div>
+                </div>
+                <span id="check-classic-platinum" class="text-xs text-[var(--accent)] font-bold hidden">✓</span>
+              </div>
+            </div>
+
+            <!-- Card 4: Soft Bento -->
+            <div onclick="selectTheme('soft-bento')" id="tcard-soft-bento" class="bento-card rounded-2xl p-2.5 cursor-pointer hover:border-[var(--accent)] space-y-2">
+              <div class="h-16 rounded-xl bg-slate-100 border border-slate-200 p-1.5 flex flex-col justify-between">
+                <div class="grid grid-cols-3 gap-1">
+                  <div class="h-4 rounded bg-[#dcfce7]"></div>
+                  <div class="h-4 rounded bg-[#fef3c7]"></div>
+                  <div class="h-4 rounded bg-[#ffe4e6]"></div>
+                </div>
+                <div class="w-full h-3 rounded-full bg-slate-800"></div>
+              </div>
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-[var(--text-main)]">Soft Bento</div>
+                  <div class="text-[9px] text-[var(--text-muted)]">light · pastel</div>
+                </div>
+                <span id="check-soft-bento" class="text-xs text-[var(--accent)] font-bold hidden">✓</span>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Accent Selector Card -->
+          <div class="bento-card rounded-2xl p-3 space-y-2">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-bold text-[var(--text-main)]">Accent</span>
+              <span class="text-[10px] text-[var(--text-muted)] font-medium">Midnight Bento only</span>
+            </div>
+            <div class="flex items-center gap-3 pt-1">
+              <button onclick="setAccent('#9d72ff', 'purple')" id="swatch-purple" class="w-6 h-6 rounded-full bg-[#9d72ff] ring-2 ring-white ring-offset-2 ring-offset-[var(--bg-frame)] transform hover:scale-110 transition-all"></button>
+              <button onclick="setAccent('#22d3ee', 'cyan')" id="swatch-cyan" class="w-6 h-6 rounded-full bg-[#22d3ee] transform hover:scale-110 transition-all"></button>
+              <button onclick="setAccent('#10b981', 'green')" id="swatch-green" class="w-6 h-6 rounded-full bg-[#10b981] transform hover:scale-110 transition-all"></button>
+              <button onclick="setAccent('#f59e0b', 'amber')" id="swatch-amber" class="w-6 h-6 rounded-full bg-[#f59e0b] transform hover:scale-110 transition-all"></button>
+              <button onclick="setAccent('#fb7185', 'coral')" id="swatch-coral" class="w-6 h-6 rounded-full bg-[#fb7185] transform hover:scale-110 transition-all"></button>
+            </div>
+          </div>
+
+          <!-- Subtitle note -->
+          <div class="text-center text-[10px] text-[var(--text-dim)] pt-1">
+            Midnight Bento is the default. Changes apply instantly.
+          </div>
+
+        </div>
+      </div>
+
+
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <!-- FRAME 5: ACTIVITY LOG                                       -->
+      <!-- ─────────────────────────────────────────────────────────── -->
+      <div class="w-[320px] shrink-0 space-y-2">
+        <div class="flex items-center justify-between text-xs font-semibold text-[var(--text-muted)] px-1">
+          <span>Activity log</span>
+          <div class="flex items-center gap-1.5 text-[var(--text-dim)]">
+            <span class="cursor-pointer hover:text-[var(--text-main)]" onclick="openSingleScreen('screen-logs')">⤢</span>
+            <span>⤓</span>
+          </div>
+        </div>
+
+        <div id="frame-5" class="bg-[var(--bg-frame)] border border-[var(--border-color)] rounded-[26px] p-3.5 shadow-2xl space-y-3 relative overflow-hidden">
+          
+          <!-- Header Bar with Back Button -->
+          <div class="flex items-center justify-between pt-0.5">
+            <div class="flex items-center gap-2">
+              <button onclick="navigateTo('screen-default')" class="w-7 h-7 rounded-full bg-[var(--bg-card)] border border-[var(--border-color)] flex items-center justify-center text-xs text-[var(--text-muted)] hover:text-[var(--text-main)]">
+                ←
+              </button>
+              <span class="font-extrabold text-sm tracking-tight text-[var(--text-main)]">Activity log</span>
+            </div>
+            <div class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#10b981]/15 text-[#10b981] text-[10px] font-bold">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#10b981] animate-pulse"></span>
+              <span>live</span>
+            </div>
+          </div>
+
+          <!-- Filter Pills -->
+          <div class="flex items-center gap-1.5 text-xs overflow-x-auto pb-0.5">
+            <button onclick="filterFigmaLogs('All')" id="flt-figma-All" class="px-3 py-1 rounded-full bg-[var(--accent)] text-white font-bold text-[11px] shadow">All</button>
+            <button onclick="filterFigmaLogs('Sync')" id="flt-figma-Sync" class="px-2.5 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-[11px]">Sync</button>
+            <button onclick="filterFigmaLogs('Import')" id="flt-figma-Import" class="px-2.5 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-[11px]">Import</button>
+            <button onclick="filterFigmaLogs('Errors')" id="flt-figma-Errors" class="px-2.5 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-[11px] flex items-center gap-1">
+              <span>Errors</span>
+              <span class="w-3.5 h-3.5 rounded-full bg-[#f43f5e] text-white text-[9px] font-black flex items-center justify-center">1</span>
+            </button>
+          </div>
+
+          <!-- Structured Log Rows -->
+          <div id="figma-logs-container" class="space-y-1.5 max-h-[360px] overflow-y-auto pr-0.5 font-mono text-[11px]">
+            <!-- Rendered by JavaScript -->
+          </div>
+
+          <!-- Footer Actions -->
+          <div class="grid grid-cols-2 gap-2 pt-1">
+            <button onclick="copyFigmaLog()" class="py-2 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-main)] text-xs font-semibold border border-[var(--border-color)] flex items-center justify-center gap-1.5">
+              <span>📋</span>
+              <span id="lbl-copy-log">Copy log</span>
+            </button>
+            <button onclick="clearFigmaLogs()" class="py-2 rounded-full bg-[var(--bg-card)] hover:bg-[var(--bg-card-subtle)] text-[var(--text-muted)] hover:text-[#f43f5e] text-xs font-semibold border border-[var(--border-color)] flex items-center justify-center gap-1.5">
+              <span>🗑</span>
+              <span>Clear</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+
+  <!-- ========================================================================= -->
+  <!-- MODE 2: INTERACTIVE DEVICE VIEW (CLICKABLE SINGLE VIEWPORT POPUP)         -->
+  <!-- ========================================================================= -->
+  <main id="device-view" class="max-w-md mx-auto hidden pb-12">
+    <!-- Mock Browser Toolbar with Extension Icon -->
+    <div class="bg-[var(--bg-card)] border border-[var(--border-color)] rounded-2xl p-2.5 mb-3 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs text-[var(--text-muted)] font-mono">
+        <span class="text-[#10b981]">🔒</span>
+        <span>https://leetcode.com/problems/two-sum/</span>
+      </div>
+      <!-- Clickable toolbar button -->
+      <button onclick="toggleDevicePopup()" class="p-1 rounded-lg bg-[var(--bg-card-subtle)] border border-[var(--border-color)] hover:border-[var(--accent)] flex items-center gap-1.5 group">
+        <div class="w-6 h-6 rounded bg-[var(--accent)] text-white font-bold flex items-center justify-center text-xs">
+          &lt;&gt;
+        </div>
+        <span class="text-[10px] font-bold text-[var(--text-main)]">LeetSync</span>
+      </button>
+    </div>
+
+    <!-- The Active Interactive Screen Container -->
+    <div id="interactive-screen-mount" class="w-full">
+      <!-- Cloned active screen will mount here -->
+    </div>
+  </main>
+
+  <script>
+    // State Store
+    const store = {
+      theme: 'midnight-bento',
+      accent: '#9d72ff',
+      activeFilter: 'All',
+      viewMode: 'canvas',
+      currentScreen: 'screen-default',
+      importRunning: false,
+      importProgress: 40,
+      totalToImport: 168,
+      importTimer: null,
+      logs: [
+        { time: '14:59:20', badge: 'ERR', tag: 'IMPORT', msg: 'Could not read a submission, retrying (1 of 3)', category: 'Errors' },
+        { time: '14:59:02', badge: 'WARN', tag: 'IMPORT', msg: 'GitHub rate limit reached, resuming in 42s', category: 'Import' },
+        { time: '14:58:30', badge: 'OK', tag: 'IMPORT', msg: 'Commit 2 of 9 · 20 problems', category: 'Import' },
+        { time: '14:57:45', badge: 'OK', tag: 'IMPORT', msg: 'Commit 1 of 9 · 20 problems', category: 'Import' },
+        { time: '14:57:02', badge: 'INFO', tag: 'IMPORT', msg: 'Import started · 168 found · latest per problem', category: 'Import' },
+        { time: '14:56:50', badge: 'OK', tag: 'SYNC', msg: 'Committed "Add 146. LRU Cache (C++)"', category: 'Sync' },
+        { time: '14:56:49', badge: 'INFO', tag: 'SYNC', msg: 'Accepted: 146. LRU Cache (C++)', category: 'Sync' }
+      ]
+    };
+
+    // Initialize View Mode
+    function setViewMode(mode) {
+      store.viewMode = mode;
+      const c = document.getElementById('canvas-view');
+      const d = document.getElementById('device-view');
+      const btnC = document.getElementById('btn-mode-canvas');
+      const btnD = document.getElementById('btn-mode-device');
+
+      if (mode === 'canvas') {
+        c.classList.remove('hidden');
+        d.classList.add('hidden');
+        btnC.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[var(--accent)] text-white shadow';
+        btnD.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all';
+      } else {
+        c.classList.add('hidden');
+        d.classList.remove('hidden');
+        btnD.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-[var(--accent)] text-white shadow';
+        btnC.className = 'px-3 py-1.5 rounded-lg text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-main)] transition-all';
+        renderDeviceMount();
+      }
+    }
+
+    // Switch between screens in interactive device mode
+    function navigateTo(screenId) {
+      store.currentScreen = screenId;
+      if (store.viewMode === 'device') {
+        renderDeviceMount();
+      } else {
+        // Highlight corresponding frame in canvas
+        const frameMap = {
+          'screen-default': 'frame-1',
+          'screen-import-ready': 'frame-2',
+          'screen-import-running': 'frame-3',
+          'screen-themes': 'frame-4',
+          'screen-logs': 'frame-5'
+        };
+        const el = document.getElementById(frameMap[screenId]);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+          el.classList.add('ring-4', 'ring-[var(--accent)]');
+          setTimeout(() => el.classList.remove('ring-4', 'ring-[var(--accent)]'), 800);
+        }
+      }
+    }
+
+    function openSingleScreen(screenId) {
+      setViewMode('device');
+      navigateTo(screenId);
+    }
+
+    function renderDeviceMount() {
+      const mount = document.getElementById('interactive-screen-mount');
+      if (!mount) return;
+      const frameMap = {
+        'screen-default': 'frame-1',
+        'screen-import-ready': 'frame-2',
+        'screen-import-running': 'frame-3',
+        'screen-themes': 'frame-4',
+        'screen-logs': 'frame-5'
+      };
+      const source = document.getElementById(frameMap[store.currentScreen]);
+      if (source) {
+        mount.innerHTML = '';
+        const clone = source.cloneNode(true);
+        clone.id = 'active-device-frame';
+        mount.appendChild(clone);
+      }
+    }
+
+    // Select Theme
+    function selectTheme(themeName) {
+      store.theme = themeName;
+      document.body.className = `theme-${themeName} min-h-screen p-3 md:p-6 transition-colors duration-300`;
+
+      ['midnight-bento', 'macos-glass', 'classic-platinum', 'soft-bento'].forEach(t => {
+        const check = document.getElementById(`check-${t}`);
+        const card = document.getElementById(`tcard-${t}`);
+        if (check && card) {
+          if (t === themeName) {
+            check.classList.remove('hidden');
+            card.classList.add('ring-2', 'ring-[var(--accent)]', 'bg-[var(--bg-card-subtle)]');
+          } else {
+            check.classList.add('hidden');
+            card.classList.remove('ring-2', 'ring-[var(--accent)]', 'bg-[var(--bg-card-subtle)]');
+          }
+        }
+      });
+      if (store.viewMode === 'device') renderDeviceMount();
+    }
+
+    // Set Accent Color
+    function setAccent(color, name) {
+      store.accent = color;
+      document.documentElement.style.setProperty('--accent', color);
+      document.documentElement.style.setProperty('--accent-glow', color + '40');
+
+      ['purple', 'cyan', 'green', 'amber', 'coral'].forEach(c => {
+        const sw = document.getElementById(`swatch-${c}`);
+        if (sw) {
+          if (c === name) {
+            sw.className = `w-6 h-6 rounded-full bg-[${color}] ring-2 ring-white ring-offset-2 ring-offset-[var(--bg-frame)] transform scale-110`;
+          } else {
+            sw.className = `w-6 h-6 rounded-full bg-[${c}] transform hover:scale-110 transition-all`;
+          }
+        }
+      });
+      if (store.viewMode === 'device') renderDeviceMount();
+    }
+
+    // Render Figma Activity Logs
+    function renderFigmaLogs() {
+      const c = document.getElementById('figma-logs-container');
+      if (!c) return;
+
+      const filtered = store.logs.filter(l => {
+        if (store.activeFilter === 'All') return true;
+        if (store.activeFilter === 'Sync') return l.category === 'Sync';
+        if (store.activeFilter === 'Import') return l.category === 'Import';
+        if (store.activeFilter === 'Errors') return l.badge === 'ERR';
+        return true;
+      });
+
+      c.innerHTML = filtered.map(l => {
+        let badgeColor = 'bg-[#10b981]/20 text-[#10b981] border-[#10b981]/30';
+        if (l.badge === 'ERR') badgeColor = 'bg-[#f43f5e]/20 text-[#f43f5e] border-[#f43f5e]/30';
+        if (l.badge === 'WARN') badgeColor = 'bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30';
+        if (l.badge === 'INFO') badgeColor = 'bg-[#22d3ee]/20 text-[#22d3ee] border-[#22d3ee]/30';
+
+        return `
+          <div class="log-row-figma">
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-1.5">
+                <span class="text-[var(--text-muted)]">${l.time}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9px] font-bold border ${badgeColor}">${l.badge}</span>
+              </div>
+              <span class="text-[9px] font-bold uppercase text-[var(--text-dim)]">${l.tag}</span>
+            </div>
+            <div class="text-[var(--text-main)] text-[11px] mt-0.5">${l.msg}</div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function filterFigmaLogs(cat) {
+      store.activeFilter = cat;
+      ['All', 'Sync', 'Import', 'Errors'].forEach(f => {
+        const btn = document.getElementById(`flt-figma-${f}`);
+        if (btn) {
+          if (f === cat) {
+            btn.className = 'px-3 py-1 rounded-full bg-[var(--accent)] text-white font-bold text-[11px] shadow';
+          } else {
+            btn.className = 'px-2.5 py-1 rounded-full bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[var(--text-main)] font-semibold text-[11px]';
+          }
+        }
+      });
+      renderFigmaLogs();
+    }
+
+    function copyFigmaLog() {
+      const text = store.logs.map(l => `${l.time} [${l.badge}] ${l.tag}: ${l.msg}`).join('\n');
+      navigator.clipboard.writeText(text).then(() => {
+        const lbl = document.getElementById('lbl-copy-log');
+        lbl.textContent = 'Copied!';
+        setTimeout(() => lbl.textContent = 'Copy log', 1500);
+      });
+    }
+
+    function clearFigmaLogs() {
+      store.logs = [];
+      renderFigmaLogs();
+    }
+
+    // Interactive Import Simulation
+    function startImportWorkflow() {
+      navigateTo('screen-import-running');
+      store.importRunning = true;
+      store.importProgress = 40;
+
+      if (store.importTimer) clearInterval(store.importTimer);
+      store.importTimer = setInterval(() => {
+        if (!store.importRunning) return;
+        store.importProgress += 4;
+        if (store.importProgress > 168) {
+          store.importProgress = 168;
+          clearInterval(store.importTimer);
+          store.importRunning = false;
+        }
+
+        const pct = Math.round((store.importProgress / 168) * 100);
+        const arc = document.getElementById('radial-progress-arc');
+        const num = document.getElementById('radial-imported-val');
+        const pctEl = document.getElementById('radial-percent');
+        const countBox = document.getElementById('stat-run-imported');
+        
+        if (arc) arc.setAttribute('stroke-dasharray', `${pct}, 100`);
+        if (num) num.textContent = store.importProgress;
+        if (pctEl) pctEl.textContent = `${pct}%`;
+        if (countBox) countBox.textContent = store.importProgress;
+      }, 700);
+    }
+
+    function toggleImportPause() {
+      store.importRunning = !store.importRunning;
+      const b = document.getElementById('btn-pause-import');
+      if (b) {
+        b.textContent = store.importRunning ? '⏸ Pause' : '▶ Resume';
+      }
+    }
+
+    function stopImportWorkflow() {
+      clearInterval(store.importTimer);
+      store.importRunning = false;
+      navigateTo('screen-default');
+    }
+
+    function simulateSyncNow() {
+      const btn = document.getElementById('btn-sync-now');
+      btn.innerHTML = '<span>⏳</span><span>Syncing...</span>';
+      setTimeout(() => {
+        btn.innerHTML = '<span>🔄</span><span>Sync now</span>';
+        const d = new Date();
+        const t = [d.getHours(), d.getMinutes()].map(n => String(n).padStart(2, '0')).join(':');
+        const syncLbl = document.getElementById('dash-last-sync');
+        if (syncLbl) syncLbl.textContent = `last sync ${t}`;
+
+        store.logs.unshift({
+          time: t + ':12',
+          badge: 'OK',
+          tag: 'SYNC',
+          msg: 'Committed solution batch to octocat/leetcode-solutions (HEAD main)',
+          category: 'Sync'
+        });
+        renderFigmaLogs();
+      }, 900);
+    }
+
+    function toggleDevicePopup() {
+      // Toggle device view open/close
+    }
+
+    // Initial setup
+    renderFigmaLogs();
+  </script>
+</body>
+</html>

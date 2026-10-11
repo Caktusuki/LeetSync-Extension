@@ -1,0 +1,846 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>LeetSync Settings</title>
+<style>
+  :root {
+    --bg-page: #0b0f19;
+    --bg-card: #111827;
+    --bg-input: #0b0f17;
+    --border: #1e293b;
+    --border-focus: #6366f1;
+    --text-title: #ffffff;
+    --text-label: #94a3b8;
+    --text-input: #f8fafc;
+    --text-muted: #64748b;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-glow: rgba(99, 102, 241, 0.35);
+    --green: #10b981;
+    --yellow: #f59e0b;
+    --red: #f87171;
+    --red-bg: #2a151d;
+    --red-border: #451b24;
+  }
+
+  /* Theme overrides */
+  body.theme-macos-glass {
+    --bg-page: #e9eef5;
+    --bg-card: #ffffff;
+    --bg-input: #f1f5f9;
+    --border: #cbd5e1;
+    --border-focus: #0284c7;
+    --text-title: #0f172a;
+    --text-label: #475569;
+    --text-input: #0f172a;
+    --text-muted: #64748b;
+    --accent: #0284c7;
+    --accent-hover: #0369a1;
+    --accent-glow: rgba(2, 132, 199, 0.25);
+  }
+  body.theme-classic-platinum {
+    --bg-page: #c0c0c0;
+    --bg-card: #dcdcdc;
+    --bg-input: #ffffff;
+    --border: #808080;
+    --border-focus: #000080;
+    --text-title: #000080;
+    --text-label: #222222;
+    --text-input: #000000;
+    --text-muted: #444444;
+    --accent: #000080;
+    --accent-hover: #000066;
+    --accent-glow: rgba(0, 0, 128, 0.2);
+  }
+  body.theme-soft-bento {
+    --bg-page: #f8fafc;
+    --bg-card: #ffffff;
+    --bg-input: #f1f5f9;
+    --border: #e2e8f0;
+    --border-focus: #ec4899;
+    --text-title: #1e293b;
+    --text-label: #475569;
+    --text-input: #1e293b;
+    --text-muted: #64748b;
+    --accent: #ec4899;
+    --accent-hover: #db2777;
+    --accent-glow: rgba(236, 72, 153, 0.25);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background-color: var(--bg-page);
+    color: var(--text-input);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    max-width: 680px;
+    margin: 32px auto;
+    padding: 0 20px 80px;
+  }
+
+  /* Browser Info Banner */
+  .zen-notice {
+    background: rgba(99, 102, 241, 0.12);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 24px;
+    font-size: 13px;
+    line-height: 1.45;
+    color: #c7d2fe;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  .zen-notice-icon { font-size: 18px; flex-shrink: 0; }
+
+  /* Page Header */
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+  .page-title {
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--text-title);
+    letter-spacing: -0.4px;
+  }
+  .divider {
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 24px;
+  }
+
+  /* Card Sections */
+  .settings-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 20px;
+  }
+  .card-header {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-title);
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  /* Form Elements */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  .form-group:last-child {
+    margin-bottom: 0;
+  }
+  label.field-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-label);
+    margin-bottom: 7px;
+  }
+  .input-with-button {
+    display: flex;
+    gap: 8px;
+  }
+  input[type="text"],
+  input[type="password"],
+  input[type="number"],
+  select {
+    width: 100%;
+    background-color: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text-input);
+    padding: 10px 14px;
+    font-size: 14px;
+    font-family: inherit;
+    transition: border-color 0.15s, box-shadow 0.15s;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus,
+  input[type="number"]:focus,
+  select:focus {
+    outline: none;
+    border-color: var(--border-focus);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+  }
+  select {
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+  .field-hint {
+    font-size: 11.5px;
+    color: var(--text-muted);
+    margin-top: 6px;
+    line-height: 1.4;
+  }
+  .field-hint a {
+    color: var(--accent);
+    text-decoration: none;
+    font-weight: 600;
+  }
+  .field-hint a:hover {
+    text-decoration: underline;
+  }
+
+  /* Checkboxes */
+  .checkbox-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 14px;
+  }
+  .checkbox-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .checkbox-label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .custom-checkbox {
+    width: 18px;
+    height: 18px;
+    border-radius: 4px;
+    border: 1px solid #334155;
+    background-color: var(--bg-input);
+    flex-shrink: 0;
+    margin-top: 1px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox {
+    background-color: var(--accent);
+    border-color: var(--accent);
+  }
+  .custom-checkbox:after {
+    content: "";
+    display: none;
+    width: 4px;
+    height: 8px;
+    border: solid white;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+  }
+  .checkbox-label input[type="checkbox"]:checked + .custom-checkbox:after {
+    display: block;
+  }
+  .checkbox-text {
+    font-size: 13px;
+    font-weight: 600;
+    color: #f1f5f9;
+    line-height: 1.4;
+  }
+
+  /* Status Indicators */
+  .auth-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 2px;
+  }
+  .auth-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .auth-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+  .auth-sub {
+    font-size: 12px;
+    color: var(--text-label);
+    margin-top: 4px;
+  }
+
+  /* Buttons */
+  .btn-disconnect {
+    background-color: var(--red-bg);
+    border: 1px solid var(--red-border);
+    color: var(--red);
+    font-size: 12.5px;
+    font-weight: 600;
+    border-radius: 8px;
+    padding: 7px 14px;
+    cursor: pointer;
+    transition: background-color 0.15s, border-color 0.15s;
+  }
+  .btn-disconnect:hover {
+    background-color: #3b1c26;
+  }
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--text-label);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .btn-secondary:hover {
+    background-color: var(--border);
+    color: #ffffff;
+  }
+  .btn-save {
+    background-color: var(--accent);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: 8px;
+    padding: 12px 28px;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px var(--accent-glow);
+    transition: background-color 0.15s, transform 0.1s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .btn-save:hover {
+    background-color: var(--accent-hover);
+  }
+  .btn-github-oauth {
+    background: #24292f;
+    color: #ffffff;
+    border: 1px solid #444c56;
+    border-radius: 8px;
+    padding: 12px 22px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+  }
+  .btn-github-oauth:hover {
+    background: #2f363d;
+    border-color: var(--accent);
+    box-shadow: 0 4px 20px var(--accent-glow);
+    transform: translateY(-1px);
+  }
+  .btn-create-repo {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--green);
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.15s;
+  }
+  .btn-create-repo:hover {
+    background: rgba(16, 185, 129, 0.22);
+  }
+
+  .actions-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 26px;
+  }
+
+  /* Toast / Alerts */
+  .toast-alert {
+    padding: 13px 18px;
+    border-radius: 10px;
+    font-size: 13.5px;
+    font-weight: 600;
+    margin-top: 18px;
+    display: none;
+    line-height: 1.45;
+  }
+  .toast-alert.ok {
+    display: block !important;
+    background-color: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.35);
+    color: var(--green);
+  }
+  .toast-alert.err {
+    display: block !important;
+    background-color: rgba(248, 113, 113, 0.12);
+    border: 1px solid rgba(248, 113, 113, 0.35);
+    color: var(--red);
+  }
+
+  /* Badges & Extra cards */
+  .badge-tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2.5px 8px;
+    border-radius: 9999px;
+  }
+  .badge-auto {
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: var(--green);
+  }
+  .badge-tool {
+    background: rgba(99, 102, 241, 0.15);
+    border: 1px solid rgba(99, 102, 241, 0.3);
+    color: var(--accent);
+  }
+  .stat-grid-3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 14px 0;
+  }
+  .stat-box {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 800; }
+  .stat-lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+
+  .log-viewport {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-height: 260px;
+    overflow-y: auto;
+    font-family: ui-monospace, monospace;
+    font-size: 11.5px;
+    padding: 8px;
+    margin-top: 12px;
+  }
+  .log-line {
+    padding: 3px 6px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    display: flex;
+    gap: 8px;
+  }
+</style>
+</head>
+<body>
+
+  <!-- Top Tip Banner -->
+  <div class="zen-notice" id="zen-top-banner">
+    <span class="zen-notice-icon">🧩</span>
+    <div>
+      <b>Zen Browser Toolbar Tip:</b> If you don't see the LeetSync icon in your toolbar, click the <b>Extensions puzzle icon (🧩)</b> at the top right of Zen Browser, then click <b>LeetSync</b>. You can also click the gear icon next to it and select <b>Pin to Toolbar</b>!
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="page-header">
+    <h1 class="page-title">LeetSync Settings</h1>
+  </header>
+  <div class="divider"></div>
+
+  <!-- ========================================== -->
+  <!-- 1. LEETCODE CONNECTION                     -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-leetcode">
+    <div class="card-header">
+      <span>1. LeetCode Account</span>
+      <span class="badge-tag badge-auto">Automatic Session</span>
+    </div>
+
+    <div class="auth-row" style="margin-bottom: 12px;">
+      <div>
+        <div class="auth-indicator" id="lc-status-indicator">
+          <span class="auth-dot" id="lc-status-dot" style="background-color: var(--yellow);"></span>
+          <span id="lc-status-text" style="color: var(--yellow);">Checking LeetCode login status...</span>
+        </div>
+        <div class="auth-sub" id="lc-status-sub">
+          LeetSync connects directly to your active LeetCode session in your browser. No passwords or tokens required!
+        </div>
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn-secondary" id="btn-check-lc">⟳ Re-check</button>
+        <a href="https://leetcode.com" target="_blank" class="btn-secondary" id="link-open-lc">Open LeetCode ↗</a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 2. GITHUB AUTHENTICATION                   -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-auth">
+    <div class="card-header">
+      <span>2. GitHub Authentication</span>
+      <button type="button" class="btn-disconnect" id="btn-auth-toggle" style="display: none;">Disconnect</button>
+    </div>
+
+    <!-- Connected State Banner -->
+    <div id="auth-connected-box" style="display: none; margin-bottom: 16px;">
+      <div class="auth-row">
+        <div>
+          <div class="auth-indicator">
+            <span class="auth-dot" style="background-color: var(--green);"></span>
+            <span id="auth-connected-text" style="color: var(--green); font-weight: 700;">Connected as @username</span>
+          </div>
+          <div class="auth-sub" id="auth-connected-sub">
+            GitHub account authorized and ready to sync your accepted solutions automatically.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Disconnected State: 1-Click OAuth Action -->
+    <div id="auth-disconnected-box" style="margin-bottom: 16px;">
+      <div class="auth-row" style="margin-bottom: 16px;">
+        <div>
+          <div class="auth-indicator">
+            <span class="auth-dot" style="background-color: #94a3b8;"></span>
+            <span style="color: #94a3b8; font-weight: 700;">Not Connected to GitHub</span>
+          </div>
+          <div class="auth-sub">
+            Connect in 1 click! GitHub will prompt: <i>"Authorize LeetSync to access repositories"</i>. Click Authorize and you're done!
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <button type="button" class="btn-github-oauth" id="btn-oauth-main">
+          <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+          <span>⚡ Authorize with GitHub (1-Click)</span>
+        </button>
+      </div>
+
+      <div style="margin-top: 14px;">
+        <a href="#" id="link-toggle-manual-token" style="font-size: 12px; color: var(--text-muted); text-decoration: underline; cursor: pointer;">Or enter Personal Access Token (PAT) manually ▾</a>
+      </div>
+    </div>
+
+    <!-- Manual Token Container (collapsed by default unless token entered) -->
+    <div id="manual-token-container" style="display: none; border-top: 1px dashed var(--border); padding-top: 14px; margin-top: 10px;">
+      <div class="form-group">
+        <label class="field-label">Personal Access Token</label>
+        <div class="input-with-button">
+          <input type="password" id="token" placeholder="ghp_... or github_pat_..." autocomplete="off">
+          <button type="button" class="btn-secondary" id="btn-toggle-token-mask" title="Show or hide token">👁️ Show</button>
+        </div>
+        <div class="field-hint">
+          Need a token? <a href="https://github.com/settings/tokens/new?description=LeetSync&scopes=repo" target="_blank" id="link-create-token">Generate token on GitHub ↗</a> (select <b>repo</b> scope).
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 3. TARGET REPOSITORY                       -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-repo">
+    <div class="card-header">
+      <span>3. Target Repository</span>
+      <span class="badge-tag badge-tool" id="badge-repo-count">0 Repos Loaded</span>
+    </div>
+
+    <!-- Active Repository Badge Banner -->
+    <div id="repo-active-badge" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 8px; padding: 10px 14px; margin-bottom: 16px; font-size: 13px; display: flex; align-items: center; justify-content: space-between;">
+      <div>
+        <span style="color: var(--green); font-weight: 700;">✓ Active Target Repository:</span>
+        <span id="repo-active-name" style="font-weight: 800; color: var(--text-title); margin-left: 4px;">not set</span>
+        <span style="font-size: 11px; color: var(--text-muted); margin-left: 6px;">(Branch: <code id="repo-active-branch">main</code>)</span>
+      </div>
+    </div>
+
+    <div class="form-group" id="group-repo-select">
+      <label class="field-label">Search & Select Repository from Your GitHub Account</label>
+      <div style="margin-bottom: 8px;">
+        <input type="text" id="repo-search-input" placeholder="🔍 Type to search repositories (e.g. leetcode, solutions, notes)..." autocomplete="off">
+      </div>
+      <div class="input-with-button">
+        <select id="repo-select">
+          <option value="">Connect GitHub above to load your repositories</option>
+        </select>
+        <button type="button" class="btn-secondary" id="btn-refresh-repos" title="Refresh repositories from GitHub">⟳ Repos</button>
+      </div>
+      <div class="field-hint" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span id="repo-search-status">Filter by typing above or click to select:</span>
+        <button type="button" class="btn-create-repo" id="btn-create-default-repo">+ Create 'leetcode-solutions' Repo</button>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Repository Name</label>
+      <input type="text" id="repo" placeholder="e.g. leetcode-solutions">
+      <div class="field-hint">
+        The repository where solutions will be pushed.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Your GitHub Username (Repository Owner)</label>
+      <input type="text" id="owner" placeholder="e.g. your-github-username">
+      <div class="field-hint">Auto-detected when you connect with GitHub.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Target Branch</label>
+      <input type="text" id="branch" placeholder="main" value="main">
+      <div class="field-hint">Usually <code>main</code> or <code>master</code>. If new/empty, LeetSync will create it automatically.</div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Base Folder (Optional)</label>
+      <input type="text" id="base-folder" placeholder="LeetCode" value="LeetCode">
+      <div class="field-hint">Folder prefix inside the repo (leave empty for root).</div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 4. DIRECTORY STRUCTURE & FILES             -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-directory">
+    <div class="card-header">
+      <span>4. Directory Structure & Files</span>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Folder Organization</label>
+      <select id="folder-org">
+        <option value="difficulty" selected>Difficulty Folders (e.g. LeetCode/Easy/1-two-sum/)</option>
+        <option value="language">Language Folders (e.g. LeetCode/Python3/Easy/1-two-sum/)</option>
+        <option value="flat">Standard Padded Folders (e.g. LeetCode/0001-two-sum/)</option>
+        <option value="leethub">Legacy (LeetHub) (e.g. Two-Sum/ or 0001-two-sum/)</option>
+        <option value="tag">Category / Tag Folders (e.g. LeetCode/Arrays/1-two-sum/)</option>
+        <option value="custom">✨ Custom Template String...</option>
+      </select>
+    </div>
+
+    <!-- Custom Folder Template Input (Shown when 'custom' is selected) -->
+    <div class="form-group" id="group-custom-folder" style="display: none;">
+      <label class="field-label">Custom Folder Template String</label>
+      <input type="text" id="custom-folder-template" placeholder="{difficulty}/{padded_id}-{slug}" value="{difficulty}/{padded_id}-{slug}">
+      <div class="field-hint">
+        Path variables: <code>{id}</code>, <code>{padded_id}</code>, <code>{title}</code>, <code>{slug}</code>, <code>{difficulty}</code>, <code>{lang}</code>, <code>{tag}</code>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Solution File Base Name</label>
+      <input type="text" id="file-base-name" placeholder="solution" value="solution">
+      <div class="field-hint">
+        Saved as <code>&lt;name&gt;.&lt;ext&gt;</code> (e.g. <code>solution</code>, <code>{title}</code>, <code>main</code>, <code>answer</code>). Variables: <code>{title}</code>, <code>{slug}</code>, <code>{padded_id}</code>.
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Commit Message Template</label>
+      <input type="text" id="commit-template" placeholder="Add {id}. {title} ({lang})" value="Add {id}. {title} ({lang})">
+      <div class="field-hint">Available placeholders: <code>{id}</code>, <code>{title}</code>, <code>{difficulty}</code>, <code>{lang}</code>, <code>{runtime}</code>, <code>{memory}</code></div>
+    </div>
+
+    <div class="checkbox-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="gen-readme" checked>
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Generate README.md inside each problem folder with tags, description & constraints</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="maintain-root-readme" checked>
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Maintain root repository README.md with summary statistics & solutions table</span>
+      </label>
+
+      <label class="checkbox-label">
+        <input type="checkbox" id="include-topic-index" checked>
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Include LeetCode Topics Index (categorized by Array, DP, Tree, etc.) in root README.md</span>
+      </label>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 5. AUTOMATIC SYNCHRONIZATION               -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-sync">
+    <div class="card-header">
+      <span>5. Automatic Synchronization</span>
+    </div>
+
+    <div class="checkbox-group" style="margin-top: 0; margin-bottom: 16px;">
+      <label class="checkbox-label">
+        <input type="checkbox" id="realtime-sync" checked>
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Real-time Sync: Commit immediately when an Accepted submission is detected on LeetCode</span>
+      </label>
+    </div>
+
+    <div class="checkbox-group" style="margin-top: 0; margin-bottom: 16px;">
+      <label class="checkbox-label">
+        <input type="checkbox" id="periodic-sync" checked>
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Periodic background synchronization (Background Alarms)</span>
+      </label>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Sync Interval (Minutes)</label>
+      <input type="number" id="sync-interval" value="15" min="1" max="1440">
+      <div class="field-hint">How often background alarms check for queued solutions.</div>
+    </div>
+
+    <div class="checkbox-group">
+      <label class="checkbox-label">
+        <input type="checkbox" id="overwrite-existing">
+        <span class="custom-checkbox"></span>
+        <span class="checkbox-text">Overwrite existing repository files (Disabled by default for safety)</span>
+      </label>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 6. THEME & DESIGN SYSTEM                  -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-themes">
+    <div class="card-header">
+      <span>6. Theme & Visual Design</span>
+      <span class="badge-tag badge-tool">Appearance</span>
+    </div>
+
+    <div class="form-group">
+      <label class="field-label">Active Visual Theme</label>
+      <select id="opt-theme-select">
+        <option value="midnight-bento">Midnight Bento (Dark · Default)</option>
+        <option value="macos-glass">macOS Glass (Light · Frosted)</option>
+        <option value="soft-bento">Soft Bento (Light · Pastel)</option>
+        <option value="classic-platinum">Classic Platinum (Retro · Pixel)</option>
+      </select>
+      <div class="field-hint">Theme applies instantly to both the extension Popup and Settings page.</div>
+    </div>
+
+    <div class="form-group" id="opt-accent-group">
+      <label class="field-label">Accent Color (Midnight Bento)</label>
+      <div style="display: flex; gap: 10px; margin-top: 8px;">
+        <div class="swatch-opt" data-color="#9d72ff" style="width: 32px; height: 32px; border-radius: 50%; background: #9d72ff; cursor: pointer; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+        <div class="swatch-opt" data-color="#22d3ee" style="width: 32px; height: 32px; border-radius: 50%; background: #22d3ee; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+        <div class="swatch-opt" data-color="#10b981" style="width: 32px; height: 32px; border-radius: 50%; background: #10b981; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+        <div class="swatch-opt" data-color="#f59e0b" style="width: 32px; height: 32px; border-radius: 50%; background: #f59e0b; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+        <div class="swatch-opt" data-color="#fb7185" style="width: 32px; height: 32px; border-radius: 50%; background: #fb7185; cursor: pointer; border: 2px solid transparent; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 7. REPOSITORY SCANNER & MIGRATION          -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-migration">
+    <div class="card-header">
+      <div>
+        <span>7. Repository Scanner & Migration</span>
+        <span class="badge-tag badge-tool">Tool</span>
+      </div>
+    </div>
+
+    <p style="font-size: 12.5px; color: var(--text-label); line-height: 1.45; margin-bottom: 14px;">
+      Safely check your target GitHub repository in 1 API call. Detects existing solved problems, avoids duplicate folders, and identifies missing solutions.
+    </p>
+
+    <button type="button" class="btn-secondary" id="btn-scan-repo" style="background: var(--bg-input);">
+      🔍 Scan Target Repository
+    </button>
+
+    <div id="migration-results" style="display: none; margin-top: 14px;">
+      <div class="stat-grid-3">
+        <div class="stat-box">
+          <div class="stat-val" id="stat-scanned-inrepo" style="color: var(--green);">0</div>
+          <div class="stat-lbl">Already in Repo</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-scanned-missing" style="color: var(--yellow);">0</div>
+          <div class="stat-lbl">Missing to Add</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-val" id="stat-scanned-untouched" style="color: var(--accent);">0</div>
+          <div class="stat-lbl">Untouched Folders</div>
+        </div>
+      </div>
+      <div style="background: rgba(245, 158, 11, 0.12); border: 1px solid rgba(245, 158, 11, 0.3); border-radius: 8px; padding: 10px 14px; font-size: 12px; color: #f59e0b;">
+        <b>Tip:</b> If you used LeetHub previously, disable it to prevent submitting twice on every solve.
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- 8. ACTIVITY & DIAGNOSTICS LOG              -->
+  <!-- ========================================== -->
+  <section class="settings-card" id="card-logs">
+    <div class="card-header">
+      <div>
+        <span>8. Activity & Diagnostics Log</span>
+        <span class="badge-tag badge-tool">Diagnostics</span>
+      </div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <span style="font-size: 12px; color: var(--text-muted);">Last 500 lines saved across restarts. Tokens are always masked.</span>
+      <div style="display: flex; gap: 8px;">
+        <button type="button" class="btn-secondary" id="btn-copy-log" style="padding: 5px 10px; font-size: 11.5px;">📋 Copy</button>
+        <button type="button" class="btn-secondary" id="btn-clear-log" style="padding: 5px 10px; font-size: 11.5px;">Clear</button>
+      </div>
+    </div>
+
+    <div class="log-viewport" id="logs-container">
+      <div style="padding: 12px; text-align: center; color: var(--text-muted);">Loading logs...</div>
+    </div>
+  </section>
+
+
+  <!-- ========================================== -->
+  <!-- SAVE & TEST BUTTON BAR                     -->
+  <!-- ========================================== -->
+  <div class="actions-container">
+    <button type="button" class="btn-save" id="btn-save-main">Save Configuration</button>
+    <button type="button" class="btn-secondary" id="btn-test-main">Test Connection</button>
+  </div>
+
+  <div id="toast" class="toast-alert"></div>
+
+  <script src="options.js"></script>
+</body>
+</html>
